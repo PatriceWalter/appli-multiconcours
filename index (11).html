@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Concours de Pêche — AAPPMA Gundershoffen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+<style>
+:root {
+  --vert-fonce: #1a4a2e;
+  --vert-moyen: #2d7a4f;
+  --vert-clair: #e8f5ed;
+  --bleu: #185FA5;
+  --bleu-clair: #e8f0fc;
+  --orange: #F5A623;
+  --orange-clair: #fff8e6;
+  --rouge: #A32D2D;
+  --rouge-clair: #fce8e8;
+  --cream: #f0f2e9;
+  --blanc: #ffffff;
+  --gris-bg: #f4f5f0;
+  --gris-card: #ffffff;
+  --gris-border: #e2e4dc;
+  --gris-text: #6b7060;
+  --texte: #1a2012;
+  --radius: 14px;
+  --radius-sm: 8px;
+  --shadow: 0 2px 12px rgba(26,74,46,0.10);
+  --shadow-lg: 0 8px 32px rgba(26,74,46,0.15);
+  --font-titre: 'Bebas Neue', sans-serif;
+  --font-corps: 'Outfit', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: var(--font-corps);
+  background: var(--cream);
+  color: var(--texte);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ===== APP SHELL ===== */
+#app { max-width: 480px; margin: 0 auto; min-height: 100vh; position: relative; }
+
+/* ===== PAGES ===== */
+.page { display: none; flex-direction: column; min-height: 100vh; }
+.page.active { display: flex; animation: fadeIn 0.25s ease; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+/* ===== HEADER COMMUN ===== */
+.app-header {
+  background: linear-gradient(150deg, var(--vert-fonce) 0%, var(--vert-moyen) 100%);
+  padding: 20px 18px 18px;
+  position: relative;
+  overflow: hidden;
+}
+.app-header::before {
+  content:'';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 160px; height: 160px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.05);
+}
+.app-header::after {
+  content:'';
+  position: absolute;
+  bottom: -20px; left: -20px;
+  width: 100px; height: 100px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.04);
+}
+.header-top { display: flex; align-items: center; gap: 10px; position: relative; z-index: 1; }
+.btn-back {
+  width: 34px; height: 34px;
+  border-radius: var(--radius-sm);
+  background: rgba(255,255,255,0.15);
+  border: none; color: #fff;
+  font-size: 18px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.btn-back:active { background: rgba(255,255,255,0.25); }
+.header-info { flex: 1; }
+.header-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 20px; padding: 3px 10px;
+  font-size: 10px; color: rgba(255,255,255,0.85);
+  font-weight: 500; letter-spacing: 0.8px;
+  text-transform: uppercase; margin-bottom: 6px;
+}
+.header-titre {
+  font-family: var(--font-titre);
+  font-size: 26px; color: #fff;
+  letter-spacing: 1px; line-height: 1;
+}
+.header-sub { font-size: 12px; color: rgba(255,255,255,0.6); margin-top: 3px; }
+.header-icon {
+  width: 42px; height: 42px;
+  border-radius: var(--radius);
+  background: rgba(255,255,255,0.15);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; flex-shrink: 0;
+}
+
+/* ===== BODY CONTENU ===== */
+.page-body {
+  flex: 1;
+  padding: 16px;
+  background: var(--gris-bg);
+  overflow-y: auto;
+}
+
+/* ===== SECTION LABEL ===== */
+.section-label {
+  font-size: 10px; font-weight: 600;
+  color: var(--gris-text);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0 0 10px;
+}
+.section-label + * { }
+
+/* ===== CARDS ===== */
+.card {
+  background: var(--gris-card);
+  border: 1px solid var(--gris-border);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow);
+}
+
+/* ===== PAGE ACCUEIL ===== */
+/* Dernier concours */
+.last-card {
+  background: var(--gris-card);
+  border: 1.5px solid var(--vert-moyen);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 16px;
+  display: flex; align-items: center; gap: 12px;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.last-card:active { transform: scale(0.98); }
+.last-icon {
+  width: 42px; height: 42px;
+  border-radius: var(--radius-sm);
+  background: var(--vert-clair);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; flex-shrink: 0;
+}
+.last-info { flex: 1; min-width: 0; }
+.last-titre { font-size: 14px; font-weight: 600; color: var(--texte); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.last-meta { font-size: 11px; color: var(--gris-text); margin-top: 2px; }
+.btn-reprendre {
+  background: var(--vert-moyen);
+  color: #fff; border: none;
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  font-size: 12px; font-weight: 600;
+  font-family: var(--font-corps);
+  cursor: pointer; white-space: nowrap;
+  display: flex; align-items: center; gap: 5px;
+  transition: background 0.15s;
+}
+.btn-reprendre:active { background: var(--vert-fonce); }
+
+/* Grille concours */
+.concours-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.concours-card {
+  background: var(--gris-card);
+  border: 1px solid var(--gris-border);
+  border-radius: var(--radius);
+  padding: 14px 12px;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+}
+.concours-card:active { transform: scale(0.96); }
+.concours-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+.concours-card.carpo::before { background: var(--vert-moyen); }
+.concours-card.feeder::before { background: var(--bleu); }
+.concours-card.open::before { background: var(--orange); }
+.concours-card.enduro::before { background: var(--rouge); }
+
+.card-icon {
+  width: 38px; height: 38px;
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; margin-bottom: 10px;
+}
+.card-titre { font-size: 14px; font-weight: 600; color: var(--texte); margin-bottom: 3px; }
+.card-sub { font-size: 11px; color: var(--gris-text); line-height: 1.4; }
+
+/* Modules annexes */
+.module-card {
+  background: var(--gris-card);
+  border: 1px solid var(--gris-border);
+  border-radius: var(--radius);
+  padding: 13px 14px;
+  display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+  margin-bottom: 8px;
+  box-shadow: var(--shadow);
+  transition: transform 0.15s;
+}
+.module-card:active { transform: scale(0.98); }
+.module-icon {
+  width: 36px; height: 36px;
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+}
+.module-info { flex: 1; }
+.module-titre { font-size: 13px; font-weight: 600; color: var(--texte); }
+.module-sub { font-size: 11px; color: var(--gris-text); margin-top: 1px; }
+.module-arrow { color: var(--gris-text); font-size: 16px; }
+
+/* Barre du bas */
+.bottom-bar {
+  display: flex; gap: 8px;
+  margin-top: 8px;
+}
+.btn-bottom {
+  flex: 1; padding: 11px;
+  background: var(--gris-card);
+  border: 1px solid var(--gris-border);
+  border-radius: var(--radius-sm);
+  font-size: 12px; font-weight: 500;
+  color: var(--gris-text);
+  font-family: var(--font-corps);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  transition: background 0.15s;
+}
+.btn-bottom:active { background: var(--gris-border); }
+
+/* ===== PAGE PARAMETRAGE ===== */
+.field-label {
+  font-size: 11px; font-weight: 600;
+  color: var(--gris-text);
+  display: block; margin-bottom: 5px;
+}
+.field-input {
+  width: 100%; padding: 10px 12px;
+  border: 1px solid var(--gris-border);
+  border-radius: var(--radius-sm);
+  font-size: 13px; font-family: var(--font-corps);
+  color: var(--texte);
+  background: var(--gris-bg);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.field-input:focus { border-color: var(--vert-moyen); }
+.field-row { margin-bottom: 12px; }
+.field-row:last-child { margin-bottom: 0; }
+.field-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+
+/* Mode jeu */
+.mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.mode-btn {
+  border: 1.5px solid var(--gris-border);
+  border-radius: var(--radius-sm);
+  padding: 12px 8px;
+  text-align: center;
+  cursor: pointer;
+  background: var(--gris-bg);
+  transition: all 0.15s;
+}
+.mode-btn.active { border-color: var(--vert-moyen); background: var(--vert-clair); }
+.mode-btn .mb-icon { font-size: 20px; display: block; margin-bottom: 5px; }
+.mode-btn .mb-titre {
+  font-size: 13px; font-weight: 600;
+  color: var(--texte);
+}
+.mode-btn.active .mb-titre { color: var(--vert-moyen); }
+.mode-btn .mb-sub { font-size: 11px; color: var(--gris-text); margin-top: 2px; }
+
+/* Durée jours */
+.jours-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.jour-btn {
+  border: 1.5px solid var(--gris-border);
+  border-radius: var(--radius-sm);
+  padding: 12px 8px;
+  text-align: center;
+  cursor: pointer;
+  background: var(--gris-bg);
+  transition: all 0.15s;
+}
+.jour-btn.active { border-color: var(--bleu); background: var(--bleu-clair); }
+.jour-btn .jb-num { font-size: 26px; font-weight: 700; color: var(--gris-text); }
+.jour-btn.active .jb-num { color: var(--bleu); }
+.jour-btn .jb-label { font-size: 11px; color: var(--gris-text); }
+
+/* Info box */
+.info-box {
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  display: flex; gap: 8px; align-items: flex-start;
+  margin-top: 8px; font-size: 12px; line-height: 1.5;
+}
+.info-box.blue { background: var(--bleu-clair); color: var(--bleu); }
+.info-box.green { background: var(--vert-clair); color: var(--vert-moyen); }
+.info-box.orange { background: var(--orange-clair); color: #BA7517; }
+
+/* Toggles */
+.toggle-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 11px 0;
+  border-top: 1px solid var(--gris-border);
+}
+.toggle-row:first-child { border-top: none; padding-top: 0; }
+.toggle-left { display: flex; align-items: center; gap: 10px; }
+.toggle-icon {
+  width: 34px; height: 34px;
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; flex-shrink: 0;
+}
+.toggle-titre { font-size: 13px; font-weight: 600; color: var(--texte); }
+.toggle-sub { font-size: 11px; color: var(--gris-text); margin-top: 1px; }
+.toggle-switch {
+  width: 42px; height: 24px;
+  border-radius: 12px;
+  background: var(--vert-moyen);
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.toggle-switch.off { background: var(--gris-border); }
+.toggle-switch::after {
+  content: '';
+  position: absolute;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  top: 3px; right: 3px;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+.toggle-switch.off::after { transform: translateX(-18px); }
+
+/* Prix spéciaux */
+.prix-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.prix-item {
+  background: var(--gris-bg);
+  border: 1.5px solid var(--gris-border);
+  border-radius: var(--radius-sm);
+  padding: 11px 10px;
+  display: flex; align-items: center; gap: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.prix-item.active { border-color: var(--vert-moyen); background: var(--vert-clair); }
+.prix-item .pi-icon { font-size: 18px; flex-shrink: 0; }
+.prix-item .pi-titre { font-size: 12px; font-weight: 600; color: var(--texte); }
+.prix-item .pi-sub { font-size: 10px; color: var(--gris-text); margin-top: 1px; }
+.prix-check {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid var(--gris-border);
+  margin-left: auto; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+}
+.prix-item.active .prix-check {
+  background: var(--vert-moyen);
+  border-color: var(--vert-moyen);
+  color: #fff;
+}
+
+/* Codes accès */
+.code-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.code-box {
+  background: var(--gris-bg);
+  border: 1px solid var(--gris-border);
+  border-radius: var(--radius-sm);
+  padding: 11px 12px;
+}
+.code-label {
+  font-size: 11px; font-weight: 600;
+  display: flex; align-items: center; gap: 4px;
+  margin-bottom: 6px;
+}
+.code-label.admin { color: var(--rouge); }
+.code-label.oper { color: var(--bleu); }
+.code-input {
+  width: 100%; padding: 8px 10px;
+  border: 1px solid var(--gris-border);
+  border-radius: 6px;
+  font-size: 18px; font-weight: 600;
+  font-family: var(--font-corps);
+  letter-spacing: 4px;
+  text-align: center;
+  background: var(--gris-card);
+  color: var(--texte);
+  outline: none;
+}
+.code-desc { font-size: 10px; color: var(--gris-text); margin-top: 5px; text-align: center; }
+
+/* Bouton lancer */
+.btn-lancer {
+  width: 100%;
+  padding: 15px;
+  background: linear-gradient(135deg, var(--vert-fonce), var(--vert-moyen));
+  color: #fff; border: none;
+  border-radius: var(--radius);
+  font-size: 16px; font-weight: 600;
+  font-family: var(--font-corps);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  margin-top: 16px;
+  box-shadow: 0 4px 16px rgba(45,122,79,0.35);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.btn-lancer:active { transform: scale(0.98); box-shadow: 0 2px 8px rgba(45,122,79,0.25); }
+.btn-lancer .lbadge {
+  background: rgba(255,255,255,0.2);
+  border-radius: 6px; padding: 2px 9px;
+  font-size: 11px;
+}
+
+/* ===== PAGE CONNEXION ===== */
+.connexion-wrap {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 40px 24px;
+  background: var(--gris-bg);
+}
+.connexion-logo {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--vert-fonce), var(--vert-moyen));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px; margin-bottom: 24px;
+  box-shadow: var(--shadow-lg);
+}
+.connexion-titre {
+  font-family: var(--font-titre);
+  font-size: 28px; color: var(--vert-fonce);
+  letter-spacing: 1px; margin-bottom: 6px; text-align: center;
+}
+.connexion-sub { font-size: 13px; color: var(--gris-text); margin-bottom: 32px; text-align: center; }
+.connexion-card {
+  background: var(--gris-card);
+  border: 1px solid var(--gris-border);
+  border-radius: var(--radius);
+  padding: 24px;
+  width: 100%;
+  box-shadow: var(--shadow);
+}
+.connexion-role {
+  display: flex; gap: 8px; margin-bottom: 20px;
+}
+.role-btn {
+  flex: 1; padding: 10px;
+  border: 1.5px solid var(--gris-border);
+  border-radius: var(--radius-sm);
+  background: var(--gris-bg);
+  font-size: 12px; font-weight: 600;
+  font-family: var(--font-corps);
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s;
+}
+.role-btn.active.admin { border-color: var(--rouge); background: var(--rouge-clair); color: var(--rouge); }
+.role-btn.active.oper { border-color: var(--bleu); background: var(--bleu-clair); color: var(--bleu); }
+.connexion-input-wrap { position: relative; margin-bottom: 16px; }
+.connexion-input {
+  width: 100%; padding: 14px 44px 14px 14px;
+  border: 1.5px solid var(--gris-border);
+  border-radius: var(--radius-sm);
+  font-size: 24px; font-weight: 600;
+  font-family: var(--font-corps);
+  letter-spacing: 6px; text-align: center;
+  background: var(--gris-bg); color: var(--texte);
+  outline: none; transition: border-color 0.15s;
+}
+.connexion-input:focus { border-color: var(--vert-moyen); }
+.connexion-input.error { border-color: var(--rouge); animation: shake 0.3s ease; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+.btn-eye {
+  position: absolute; right: 12px; top: 50%;
+  transform: translateY(-50%);
+  background: none; border: none;
+  font-size: 18px; cursor: pointer; color: var(--gris-text);
+}
+.btn-connexion {
+  width: 100%; padding: 14px;
+  background: linear-gradient(135deg, var(--vert-fonce), var(--vert-moyen));
+  color: #fff; border: none;
+  border-radius: var(--radius-sm);
+  font-size: 15px; font-weight: 600;
+  font-family: var(--font-corps);
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(45,122,79,0.3);
+  transition: transform 0.15s;
+}
+.btn-connexion:active { transform: scale(0.98); }
+.connexion-msg { text-align: center; font-size: 12px; margin-top: 12px; min-height: 18px; }
+.connexion-msg.error { color: var(--rouge); }
+.connexion-msg.ok { color: var(--vert-moyen); }
+
+/* ===== NOTIFICATIONS ===== */
+.notif {
+  position: fixed; bottom: 20px; left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--texte); color: #fff;
+  padding: 10px 20px; border-radius: 20px;
+  font-size: 13px; font-weight: 500;
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  transition: transform 0.3s ease;
+  white-space: nowrap;
+}
+.notif.show { transform: translateX(-50%) translateY(0); }
+.notif.success { background: var(--vert-moyen); }
+.notif.error { background: var(--rouge); }
+
+/* ===== LOADER ===== */
+.loader-overlay {
+  position: fixed; inset: 0;
+  background: rgba(240,242,233,0.9);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 999; display: none;
+}
+.loader-overlay.show { display: flex; }
+.loader { width: 40px; height: 40px; border: 3px solid var(--gris-border); border-top-color: var(--vert-moyen); border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 360px) {
+  .concours-grid { grid-template-columns: 1fr 1fr; }
+  .card-titre { font-size: 13px; }
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- LOADER -->
+  <div class="loader-overlay" id="loader"><div class="loader"></div></div>
+
+  <!-- NOTIFICATION -->
+  <div class="notif" id="notif"></div>
+
+  <!-- ==============================
+       PAGE 1 : ACCUEIL
+  ============================== -->
+  <div class="page active" id="page-accueil">
+    <div class="app-header">
+      <div class="header-top">
+        <div class="header-info">
+          <div class="header-badge">🎣 AAPPMA Gundershoffen</div>
+          <div class="header-titre">Concours de Pêche</div>
+          <div class="header-sub">Sélectionnez le type de concours</div>
+        </div>
+        <div class="header-icon">🏆</div>
+      </div>
+    </div>
+
+    <div class="page-body">
+
+      <!-- Dernier concours -->
+      <p class="section-label">Reprendre</p>
+      <div class="last-card" id="last-card" style="display:none;" onclick="reprendreConcours()">
+        <div class="last-icon" id="last-icon">🎣</div>
+        <div class="last-info">
+          <div class="last-titre" id="last-titre">—</div>
+          <div class="last-meta" id="last-meta">—</div>
+        </div>
+        <button class="btn-reprendre">▶ Reprendre</button>
+      </div>
+
+      <!-- Nouveau concours -->
+      <p class="section-label">Nouveau concours</p>
+      <div class="concours-grid">
+
+        <div class="concours-card carpo" onclick="ouvrirParametrage('carpo')">
+          <div class="card-icon" style="background:var(--vert-clair);">🎣</div>
+          <div class="card-titre">Carpodrome</div>
+          <div class="card-sub">14 postes · Indiv. ou Américaine</div>
+        </div>
+
+        <div class="concours-card feeder" onclick="ouvrirParametrage('feeder')">
+          <div class="card-icon" style="background:var(--bleu-clair);">🌊</div>
+          <div class="card-titre">Feeder</div>
+          <div class="card-sub">10 postes · Indiv. ou Américaine</div>
+        </div>
+
+        <div class="concours-card open" onclick="ouvrirParametrage('open')">
+          <div class="card-icon" style="background:var(--orange-clair);">🏆</div>
+          <div class="card-titre">Open</div>
+          <div class="card-sub">Carpo + Grand Étang · 2 jours</div>
+        </div>
+
+        <div class="concours-card enduro" onclick="ouvrirParametrage('enduro')">
+          <div class="card-icon" style="background:var(--rouge-clair);">⏱️</div>
+          <div class="card-titre">Enduro 72H</div>
+          <div class="card-sub">Équipes · Poids cumulé</div>
+        </div>
+
+      </div>
+
+      <!-- Modules annexes -->
+      <p class="section-label">Modules</p>
+
+      <div class="module-card" onclick="showNotif('Tirage au sort — bientôt disponible', 'ok')">
+        <div class="module-icon" style="background:var(--vert-clair);">🎱</div>
+        <div class="module-info">
+          <div class="module-titre">Tirage au sort</div>
+          <div class="module-sub">Boules · Fléchettes · Précision</div>
+        </div>
+        <span class="module-arrow">›</span>
+      </div>
+
+      <div class="module-card" onclick="showNotif('Historique — bientôt disponible', 'ok')">
+        <div class="module-icon" style="background:var(--bleu-clair);">📋</div>
+        <div class="module-info">
+          <div class="module-titre">Historique</div>
+          <div class="module-sub">Concours passés et résultats</div>
+        </div>
+        <span class="module-arrow">›</span>
+      </div>
+
+      <!-- Barre bas -->
+      <div class="bottom-bar">
+        <button class="btn-bottom" onclick="ouvrirConnexion('admin')">⚙️ Admin</button>
+        <button class="btn-bottom" onclick="ouvrirConnexion('oper')">👤 Opérateur</button>
+      </div>
+
+    </div>
+  </div><!-- fin page-accueil -->
+
+
+  <!-- ==============================
+       PAGE 2 : CONNEXION
+  ============================== -->
+  <div class="page" id="page-connexion">
+    <div class="connexion-wrap">
+      <div class="connexion-logo">🎣</div>
+      <div class="connexion-titre">Connexion</div>
+      <div class="connexion-sub" id="connexion-sub">Entrez votre code d'accès</div>
+
+      <div class="connexion-card">
+        <!-- Choix rôle -->
+        <div class="connexion-role">
+          <button class="role-btn admin" id="role-admin" onclick="setRole('admin')">🛡️ Admin</button>
+          <button class="role-btn oper" id="role-oper" onclick="setRole('oper')">👤 Opérateur</button>
+        </div>
+
+        <!-- Champ code -->
+        <div class="connexion-input-wrap">
+          <input type="password" class="connexion-input" id="connexion-code" placeholder="••••••" maxlength="8" oninput="clearConnexionError()">
+          <button class="btn-eye" onclick="toggleConnexionVisu()">👁️</button>
+        </div>
+
+        <button class="btn-connexion" onclick="validerConnexion()">Valider</button>
+        <div class="connexion-msg" id="connexion-msg"></div>
+      </div>
+
+      <button style="margin-top:20px; background:none; border:none; color:var(--gris-text); font-size:13px; cursor:pointer; font-family:var(--font-corps);" onclick="naviguer('accueil')">← Retour</button>
+    </div>
+  </div><!-- fin page-connexion -->
+
+
+  <!-- ==============================
+       PAGE 3 : PARAMÉTRAGE
+  ============================== -->
+  <div class="page" id="page-parametrage">
+    <div class="app-header">
+      <div class="header-top">
+        <button class="btn-back" onclick="naviguer('accueil')">←</button>
+        <div class="header-info">
+          <div class="header-titre" id="param-titre">Carpodrome</div>
+          <div class="header-sub">Paramétrage du concours</div>
+        </div>
+        <div class="header-icon" id="param-icon">🎣</div>
+      </div>
+    </div>
+
+    <div class="page-body">
+
+      <!-- Informations -->
+      <p class="section-label">Informations</p>
+      <div class="card">
+        <div class="field-row">
+          <label class="field-label">📝 Titre du concours</label>
+          <input type="text" class="field-input" id="p-titre" value="Concours Carpodrome 2026">
+        </div>
+        <div class="field-2col" id="dates-container">
+          <div>
+            <label class="field-label">📅 Date J1</label>
+            <input type="date" class="field-input" id="p-date1">
+          </div>
+          <div id="date2-container">
+            <label class="field-label">📅 Date J2</label>
+            <input type="date" class="field-input" id="p-date2">
+          </div>
+        </div>
+      </div>
+
+      <!-- Durée (sauf Open et Enduro) -->
+      <div id="duree-section">
+        <p class="section-label">Durée</p>
+        <div class="card">
+          <div class="jours-grid">
+            <div class="jour-btn" id="jour1-btn" onclick="setJours(1)">
+              <div class="jb-num">1</div>
+              <div class="jb-label">jour</div>
+            </div>
+            <div class="jour-btn active" id="jour2-btn" onclick="setJours(2)">
+              <div class="jb-num">2</div>
+              <div class="jb-label">jours</div>
+            </div>
+          </div>
+          <div class="info-box blue" id="rive-info" style="display:none;">
+            ℹ️ 2 jours activé → Rive A (1→7) J1, inversion automatique Rive B (8→14) J2
+          </div>
+        </div>
+      </div>
+
+      <!-- Mode de jeu (sauf Enduro) -->
+      <div id="mode-section">
+        <p class="section-label">Mode de jeu</p>
+        <div class="card">
+          <div class="mode-grid">
+            <div class="mode-btn active" id="mode-indiv" onclick="setMode('indiv')">
+              <span class="mb-icon">👤</span>
+              <div class="mb-titre">Individuel</div>
+              <div class="mb-sub">1 pêcheur / poste</div>
+            </div>
+            <div class="mode-btn" id="mode-ame" onclick="setMode('americaine')">
+              <span class="mb-icon">👥</span>
+              <div class="mb-titre">Américaine</div>
+              <div class="mb-sub">2 pêcheurs / poste</div>
+            </div>
+          </div>
+          <div class="info-box green" id="postes-info" style="margin-top:8px;">
+            👁 Mode individuel → <strong id="nb-postes-label">14 postes</strong> disponibles
+          </div>
+        </div>
+      </div>
+
+      <!-- Options -->
+      <p class="section-label">Options</p>
+      <div class="card">
+        <div class="toggle-row">
+          <div class="toggle-left">
+            <div class="toggle-icon" style="background:var(--vert-clair);">🎱</div>
+            <div>
+              <div class="toggle-titre">Tirage automatique</div>
+              <div class="toggle-sub">Animation boules + anti-doublon</div>
+            </div>
+          </div>
+          <div class="toggle-switch" id="toggle-tirage" onclick="toggleSwitch('tirage')"></div>
+        </div>
+        <div class="toggle-row" id="toggle-periodes-row">
+          <div class="toggle-left">
+            <div class="toggle-icon" style="background:var(--bleu-clair);">🕐</div>
+            <div>
+              <div class="toggle-titre">Onglets Matin / Après-midi</div>
+              <div class="toggle-sub">Classement par période</div>
+            </div>
+          </div>
+          <div class="toggle-switch off" id="toggle-periodes" onclick="toggleSwitch('periodes')"></div>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-left">
+            <div class="toggle-icon" style="background:var(--orange-clair);">📱</div>
+            <div>
+              <div class="toggle-titre">Affichage public</div>
+              <div class="toggle-sub">Classement visible par tous</div>
+            </div>
+          </div>
+          <div class="toggle-switch" id="toggle-public" onclick="toggleSwitch('public')"></div>
+        </div>
+      </div>
+
+      <!-- Prix spéciaux -->
+      <p class="section-label">Prix spéciaux</p>
+      <div class="card">
+        <div class="prix-grid">
+          <div class="prix-item active" id="prix-pgp" onclick="togglePrix('pgp')">
+            <span class="pi-icon">🐟</span>
+            <div>
+              <div class="pi-titre">Plus grosse prise</div>
+              <div class="pi-sub">Commune ou Miroir</div>
+            </div>
+            <div class="prix-check">✓</div>
+          </div>
+          <div class="prix-item" id="prix-prestige" onclick="togglePrix('prestige')">
+            <span class="pi-icon">🏆</span>
+            <div>
+              <div class="pi-titre">Prestige</div>
+              <div class="pi-sub">Koï prime sur Amour Blanc</div>
+            </div>
+            <div class="prix-check"></div>
+          </div>
+          <div class="prix-item active" id="prix-j1" onclick="togglePrix('j1')">
+            <span class="pi-icon">📅</span>
+            <div>
+              <div class="pi-titre">Classement J1</div>
+              <div class="pi-sub">Poids jour 1</div>
+            </div>
+            <div class="prix-check">✓</div>
+          </div>
+          <div class="prix-item active" id="prix-j2" onclick="togglePrix('j2')">
+            <span class="pi-icon">📅</span>
+            <div>
+              <div class="pi-titre">Classement J2</div>
+              <div class="pi-sub">Poids jour 2</div>
+            </div>
+            <div class="prix-check">✓</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Codes d'accès -->
+      <p class="section-label">Codes d'accès</p>
+      <div class="card">
+        <div class="code-grid">
+          <div class="code-box">
+            <div class="code-label admin">🛡️ Admin</div>
+            <input type="password" class="code-input" id="code-admin" value="206160" maxlength="8">
+            <div class="code-desc">Accès complet</div>
+          </div>
+          <div class="code-box">
+            <div class="code-label oper">👤 Opérateur</div>
+            <input type="password" class="code-input" id="code-oper" value="911" maxlength="8">
+            <div class="code-desc">Saisie uniquement</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bouton lancer -->
+      <button class="btn-lancer" onclick="lancerConcours()">
+        ▶ Lancer le concours
+        <span class="lbadge" id="lancer-badge">Carpodrome · 2 jours</span>
+      </button>
+
+    </div>
+  </div><!-- fin page-parametrage -->
+
+
+</div><!-- fin app -->
+
+<!-- ==============================
+     FIREBASE + LOGIQUE
+============================== -->
+<script>
+// ===== CONFIG FIREBASE =====
+const firebaseConfig = {
+  apiKey: "AIzaSyB44m6DoeyQSNMctS0hKLpaPR5vNOTNsw0",
+  authDomain: "concours-peche.firebaseapp.com",
+  projectId: "concours-peche",
+  appId: "1:376446532224:web:4f9c1ffd2f4fe3ef450465",
+  databaseURL: "https://concours-peche-default-rtdb.europe-west1.firebasedatabase.app"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// ===== ÉTAT GLOBAL =====
+const state = {
+  typeFormat: null,    // 'carpo' | 'feeder' | 'open' | 'enduro'
+  role: null,          // 'admin' | 'oper'
+  concours: null,      // données du concours en cours
+  config: {
+    jours: 1,
+    mode: 'indiv',
+    tirage: true,
+    periodes: false,
+    public: true,
+    prix: { pgp: true, prestige: false, j1: false, j2: false }
+  }
+};
+
+// ===== CONFIG PAR FORMAT =====
+const FORMAT_CONFIG = {
+  carpo: {
+    label: 'Carpodrome',
+    icon: '🎣',
+    postes: 14,
+    couleur: 'var(--vert-moyen)',
+    dureeEditable: true,
+    modeEditable: true,
+    rives: true,
+    prestige: false
+  },
+  feeder: {
+    label: 'Feeder',
+    icon: '🌊',
+    postes: 10,
+    couleur: 'var(--bleu)',
+    dureeEditable: false,
+    modeEditable: true,
+    rives: false,
+    prestige: false
+  },
+  open: {
+    label: 'Open',
+    icon: '🏆',
+    postes: 14,
+    couleur: 'var(--orange)',
+    dureeEditable: false,
+    modeEditable: false,
+    rives: false,
+    prestige: false,
+    joursForces: 2
+  },
+  enduro: {
+    label: 'Enduro 72H',
+    icon: '⏱️',
+    postes: 10,
+    couleur: 'var(--rouge)',
+    dureeEditable: false,
+    modeEditable: false,
+    rives: false,
+    prestige: true,
+    modeForce: 'americaine'
+  }
+};
+
+// ===== NAVIGATION =====
+function naviguer(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ===== ACCUEIL : DERNIER CONCOURS =====
+function chargerDernierConcours() {
+  db.ref('concours').orderByChild('timestamp').limitToLast(1).once('value').then(snap => {
+    if (!snap.exists()) return;
+    snap.forEach(child => {
+      const d = child.val();
+      if (!d || d.statut === 'termine') return;
+      const card = document.getElementById('last-card');
+      const cfg = FORMAT_CONFIG[d.type] || {};
+      document.getElementById('last-icon').textContent = cfg.icon || '🎣';
+      document.getElementById('last-titre').textContent = d.titre || 'Concours';
+      document.getElementById('last-meta').textContent = (d.dateJ1 || '') + ' · ' + (cfg.label || '') + (d.jours === 2 ? ' · 2 jours' : '');
+      card.style.display = 'flex';
+      state.concours = { id: child.key, ...d };
+    });
+  }).catch(() => {});
+}
+
+function reprendreConcours() {
+  if (!state.concours) return;
+  showNotif('Reprise du concours...', 'ok');
+  // Navigation vers la saisie (à implémenter)
+}
+
+// ===== OUVERTURE PARAMETRAGE =====
+function ouvrirParametrage(type) {
+  state.typeFormat = type;
+  const cfg = FORMAT_CONFIG[type];
+  if (!cfg) return;
+
+  // Header
+  document.getElementById('param-titre').textContent = cfg.label;
+  document.getElementById('param-icon').textContent = cfg.icon;
+
+  // Titre par défaut
+  const today = new Date();
+  const annee = today.getFullYear();
+  document.getElementById('p-titre').value = `Concours ${cfg.label} ${annee}`;
+  document.getElementById('p-date1').value = today.toISOString().split('T')[0];
+  document.getElementById('p-date2').value = '';
+
+  // Durée
+  const dureeSection = document.getElementById('duree-section');
+  if (!cfg.dureeEditable) {
+    dureeSection.style.display = 'none';
+    state.config.jours = cfg.joursForces || 1;
+  } else {
+    dureeSection.style.display = 'block';
+    setJours(1);
+  }
+
+  // Mode
+  const modeSection = document.getElementById('mode-section');
+  if (!cfg.modeEditable) {
+    modeSection.style.display = 'none';
+    state.config.mode = cfg.modeForce || 'indiv';
+  } else {
+    modeSection.style.display = 'block';
+    setMode('indiv');
+  }
+
+  // Prix prestige (Enduro uniquement)
+  document.getElementById('prix-prestige').style.display = cfg.prestige ? 'flex' : 'none';
+
+  // Classements J1/J2
+  const showJours = cfg.dureeEditable || cfg.joursForces === 2;
+  document.getElementById('prix-j1').style.display = showJours ? 'flex' : 'none';
+  document.getElementById('prix-j2').style.display = showJours ? 'flex' : 'none';
+
+  // Badge lancer
+  const jours = cfg.joursForces === 2 ? '· 2 jours' : '';
+  document.getElementById('lancer-badge').textContent = `${cfg.label} ${jours}`;
+
+  // Open — date J2 toujours visible
+  if (type === 'open') {
+    document.getElementById('date2-container').style.display = 'block';
+  }
+
+  naviguer('parametrage');
+}
+
+// ===== PARAMETRAGE : JOURS =====
+function setJours(nb) {
+  state.config.jours = nb;
+  document.getElementById('jour1-btn').className = 'jour-btn' + (nb === 1 ? ' active' : '');
+  document.getElementById('jour2-btn').className = 'jour-btn' + (nb === 2 ? ' active' : '');
+
+  const riveInfo = document.getElementById('rive-info');
+  const date2 = document.getElementById('date2-container');
+
+  if (nb === 2 && state.typeFormat === 'carpo') {
+    riveInfo.style.display = 'flex';
+  } else {
+    riveInfo.style.display = 'none';
+  }
+
+  date2.style.display = nb === 2 ? 'block' : 'none';
+
+  // Activer J1/J2 auto si 2 jours
+  if (nb === 2) {
+    activerPrix('j1', true);
+    activerPrix('j2', true);
+  } else {
+    activerPrix('j1', false);
+    activerPrix('j2', false);
+  }
+
+  majLancerBadge();
+}
+
+// ===== PARAMETRAGE : MODE =====
+function setMode(mode) {
+  state.config.mode = mode;
+  document.getElementById('mode-indiv').className = 'mode-btn' + (mode === 'indiv' ? ' active' : '');
+  document.getElementById('mode-ame').className = 'mode-btn' + (mode === 'americaine' ? ' active' : '');
+
+  const cfg = FORMAT_CONFIG[state.typeFormat];
+  const nb = cfg ? cfg.postes : 14;
+  const label = mode === 'indiv'
+    ? `${nb} postes disponibles`
+    : `${nb} postes (${nb} équipes de 2)`;
+  document.getElementById('nb-postes-label').textContent = label;
+}
+
+// ===== PARAMETRAGE : TOGGLES =====
+function toggleSwitch(id) {
+  const el = document.getElementById('toggle-' + id);
+  const isOff = el.classList.contains('off');
+  if (isOff) {
+    el.classList.remove('off');
+    state.config[id] = true;
+  } else {
+    el.classList.add('off');
+    state.config[id] = false;
+  }
+}
+
+// ===== PARAMETRAGE : PRIX =====
+function togglePrix(id) {
+  const el = document.getElementById('prix-' + id);
+  const active = el.classList.contains('active');
+  activerPrix(id, !active);
+}
+
+function activerPrix(id, actif) {
+  const el = document.getElementById('prix-' + id);
+  if (!el) return;
+  if (actif) {
+    el.classList.add('active');
+    el.querySelector('.prix-check').textContent = '✓';
+  } else {
+    el.classList.remove('active');
+    el.querySelector('.prix-check').textContent = '';
+  }
+  state.config.prix[id] = actif;
+}
+
+// ===== PARAMETRAGE : BADGE LANCER =====
+function majLancerBadge() {
+  const cfg = FORMAT_CONFIG[state.typeFormat];
+  if (!cfg) return;
+  const jours = state.config.jours === 2 ? '· 2 jours' : '';
+  document.getElementById('lancer-badge').textContent = `${cfg.label} ${jours}`.trim();
+}
+
+// ===== LANCER CONCOURS =====
+function lancerConcours() {
+  const titre = document.getElementById('p-titre').value.trim();
+  const dateJ1 = document.getElementById('p-date1').value;
+  const codeAdmin = document.getElementById('code-admin').value.trim();
+  const codeOper = document.getElementById('code-oper').value.trim();
+
+  if (!titre) { showNotif('Saisissez un titre', 'error'); return; }
+  if (!dateJ1) { showNotif('Saisissez une date', 'error'); return; }
+  if (!codeAdmin) { showNotif('Code admin requis', 'error'); return; }
+  if (!codeOper) { showNotif('Code opérateur requis', 'error'); return; }
+  if (codeAdmin === codeOper) { showNotif('Les codes doivent être différents', 'error'); return; }
+
+  showLoader(true);
+
+  const concours = {
+    type: state.typeFormat,
+    titre,
+    dateJ1,
+    dateJ2: document.getElementById('p-date2').value || null,
+    jours: state.config.jours,
+    mode: state.config.mode,
+    options: {
+      tirage: state.config.tirage,
+      periodes: state.config.periodes,
+      public: state.config.public
+    },
+    prix: state.config.prix,
+    codeAdmin,
+    codeOper,
+    statut: 'en_cours',
+    timestamp: Date.now(),
+    postes: {},
+    pecheurs: {}
+  };
+
+  const ref = db.ref('concours').push();
+  ref.set(concours).then(() => {
+    state.concours = { id: ref.key, ...concours };
+    state.role = 'admin';
+    showLoader(false);
+    showNotif('Concours lancé ! ✓', 'success');
+    // Navigation vers saisie (à implémenter)
+    setTimeout(() => {
+      showNotif('Module de saisie en cours de développement', 'ok');
+    }, 1200);
+  }).catch(err => {
+    showLoader(false);
+    showNotif('Erreur Firebase : ' + err.message, 'error');
+  });
+}
+
+// ===== CONNEXION =====
+let roleSelectionne = 'admin';
+
+function ouvrirConnexion(role) {
+  setRole(role);
+  naviguer('connexion');
+}
+
+function setRole(role) {
+  roleSelectionne = role;
+  document.getElementById('role-admin').className = 'role-btn admin' + (role === 'admin' ? ' active' : '');
+  document.getElementById('role-oper').className = 'role-btn oper' + (role === 'oper' ? ' active' : '');
+  document.getElementById('connexion-sub').textContent =
+    role === 'admin' ? 'Code administrateur' : 'Code opérateur';
+}
+
+function validerConnexion() {
+  const code = document.getElementById('connexion-code').value.trim();
+  if (!code) { showConnexionError('Entrez un code'); return; }
+
+  // Si pas de concours chargé, vérifier les codes par défaut
+  const codeAttendu = roleSelectionne === 'admin'
+    ? (state.concours ? state.concours.codeAdmin : '206160')
+    : (state.concours ? state.concours.codeOper : '911');
+
+  if (code === codeAttendu) {
+    state.role = roleSelectionne;
+    document.getElementById('connexion-msg').className = 'connexion-msg ok';
+    document.getElementById('connexion-msg').textContent = '✓ Accès autorisé';
+    setTimeout(() => {
+      naviguer('accueil');
+      showNotif(roleSelectionne === 'admin' ? '✓ Connecté en Admin' : '✓ Connecté en Opérateur', 'success');
+    }, 600);
+  } else {
+    showConnexionError('Code incorrect');
+    const input = document.getElementById('connexion-code');
+    input.classList.add('error');
+    setTimeout(() => input.classList.remove('error'), 500);
+  }
+}
+
+function showConnexionError(msg) {
+  document.getElementById('connexion-msg').className = 'connexion-msg error';
+  document.getElementById('connexion-msg').textContent = '✗ ' + msg;
+}
+
+function clearConnexionError() {
+  document.getElementById('connexion-msg').textContent = '';
+}
+
+function toggleConnexionVisu() {
+  const input = document.getElementById('connexion-code');
+  input.type = input.type === 'password' ? 'text' : 'password';
+}
+
+// ===== UTILITAIRES =====
+function showLoader(show) {
+  document.getElementById('loader').className = 'loader-overlay' + (show ? ' show' : '');
+}
+
+let notifTimer;
+function showNotif(msg, type) {
+  const el = document.getElementById('notif');
+  el.textContent = msg;
+  el.className = 'notif show' + (type ? ' ' + type : '');
+  clearTimeout(notifTimer);
+  notifTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ===== INITIALISATION =====
+document.addEventListener('DOMContentLoaded', () => {
+  chargerDernierConcours();
+  // Date J1 par défaut = aujourd'hui
+  document.getElementById('p-date1').value = new Date().toISOString().split('T')[0];
+  // Date2 masquée par défaut
+  document.getElementById('date2-container').style.display = 'none';
+});
+</script>
+</body>
+</html>
