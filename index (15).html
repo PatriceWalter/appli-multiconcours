@@ -1,0 +1,3097 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Concours de Pêche — AAPPMA Gundershoffen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+<style>
+:root {
+  --vert-fonce: #1a4a2e;
+  --vert-moyen: #2d7a4f;
+  --vert-clair: #e8f5ed;
+  --bleu: #185FA5;
+  --bleu-clair: #e8f0fc;
+  --orange: #F5A623;
+  --orange-clair: #fff8e6;
+  --rouge: #A32D2D;
+  --rouge-clair: #fce8e8;
+  --cream: #f0f2e9;
+  --blanc: #ffffff;
+  --gris-bg: #f4f5f0;
+  --gris-card: #ffffff;
+  --gris-border: #e2e4dc;
+  --gris-text: #6b7060;
+  --texte: #1a2012;
+  --radius: 14px;
+  --radius-sm: 8px;
+  --shadow: 0 2px 12px rgba(26,74,46,0.10);
+  --shadow-lg: 0 8px 32px rgba(26,74,46,0.15);
+  --font-titre: 'Bebas Neue', sans-serif;
+  --font-corps: 'Outfit', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: var(--font-corps);
+  background: var(--cream);
+  color: var(--texte);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ===== APP SHELL ===== */
+#app { max-width: 480px; margin: 0 auto; min-height: 100vh; position: relative; }
+
+/* ===== PAGES ===== */
+.page { display: none; flex-direction: column; min-height: 100vh; }
+.page.active { display: flex; animation: fadeIn 0.25s ease; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+/* ===== HEADER COMMUN ===== */
+.app-header {
+  background: linear-gradient(150deg, var(--vert-fonce) 0%, var(--vert-moyen) 100%);
+  padding: 20px 18px 18px;
+  position: relative;
+  overflow: hidden;
+}
+.app-header::before {
+  content:'';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 160px; height: 160px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.05);
+}
+.app-header::after {
+  content:'';
+  position: absolute;
+  bottom: -20px; left: -20px;
+  width: 100px; height: 100px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.04);
+}
+.header-top { display: flex; align-items: center; gap: 10px; position: relative; z-index: 1; }
+.btn-back {
+  width: 34px; height: 34px;
+  border-radius: var(--radius-sm);
+  background: rgba(255,255,255,0.15);
+  border: none; color: #fff;
+  font-size: 18px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.btn-back:active { background: rgba(255,255,255,0.25); }
+.header-info { flex: 1; }
+.header-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 20px; padding: 3px 10px;
+  font-size: 10px; color: rgba(255,255,255,0.85);
+  font-weight: 500; letter-spacing: 0.8px;
+  text-transform: uppercase; margin-bottom: 6px;
+}
+.header-titre {
+  font-family: var(--font-titre);
+  font-size: 26px; color: #fff;
+  letter-spacing: 1px; line-height: 1;
+}
+.header-sub { font-size: 12px; color: rgba(255,255,255,0.6); margin-top: 3px; }
+.header-icon {
+  width: 42px; height: 42px;
+  border-radius: var(--radius);
+  background: rgba(255,255,255,0.15);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; flex-shrink: 0;
+}
+
+/* ===== BODY CONTENU ===== */
+.page-body {
+  flex: 1;
+  padding: 16px;
+  background: var(--gris-bg);
+  overflow-y: auto;
+}
+
+/* ===== SECTION LABEL ===== */
+.section-label {
+  font-size: 10px; font-weight: 600;
+  color: var(--gris-text);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0 0 10px;
+}
+.section-label + * { }
+
+/* ===== CARDS ===== */
+.card {
+  background: var(--gris-card);
+  border: 1px solid var(--gris-border);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow);
+}
+
+/* ===== PAGE ACCUEIL ===== */
+/* Dernier concours */
+.last-card {
+  background: var(--gris-card);
+  border: 1.5px solid var(--vert-moyen);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 16px;
+  display: flex; align-items: center; gap: 12px;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.last-card:active { transform: scale(0.98); }
+.last-icon {
+  width: 42px; height: 42px;
+  border-radius: var(--radius-sm);
+  background: var(--vert-clair);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; flex-shrink: 0;
+}
+.last-info { flex: 1; min-width: 0; }
+.last-titre { font-size: 14px; font-weight: 600; color: var(--texte); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.last-meta { font-size: 11px; color: var(--gris-text); margin-top: 2px; }
+.btn-reprendre {
+  background: var(--vert-moyen);
+  color: #fff; border: none;
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  font-size: 12px; font-weight: 600;
+  font-family: var(--font-corps);
+  cursor: pointer; white-space: nowrap;
+  display: flex; align-items: center; gap: 5px;
+  transition: background 0.15s;
+}
+.btn-reprendre:active { background: var(--vert-fonce); }
+
+/* Grille concours */
+.concours-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.concours-card {
+  background: var(--gris-card);
+  border: 1px solid var(--gris-border);
+  border-radius: var(--radius);
+  padding: 14px 12px;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+}
+.concours-card:active { transform: scale(0.96); }
+.concours-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+.concours-card.carpo::before { background: var(--vert-moyen); }
+.concours-card.feeder::before { background: var(--bleu); }
+.concours-card.open::before { background: var(--orange); }
+.concours-card.enduro::before { background: var(--rouge); }
+
+.card-icon {
+  width: 38px; height: 38px;
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; margin-bottom: 10px;
+}
+.card-titre { font-size: 14px; font-weight: 600; color: var(--texte); margin-bottom: 3px; }
+.card-sub { font-size: 11px; color: var(--gris-text); line-height: 1.4; }
+
+/* Modules annexes */
+.module-card {
+  background: var(--gris-card);
+  border: 1px solid var(--gris-border);
+  border-radius: var(--radius);
+  padding: 13px 14px;
+  display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+  margin-bottom: 8px;
+  box-shadow: var(--shadow);
+  transition: transform 0.15s;
+}
+.module-card:active { transform: scale(0.98); }
+.module-icon {
+  width: 36px; height: 36px;
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+}
+.module-info { flex: 1; }
+.module-titre { font-size: 13px; font-weight: 600; color: var(--texte); }
+.module-sub { font-size: 11px; color: var(--gris-text); margin-top: 1px; }
+.module-arrow { color: var(--gris-text); font-size: 16px; }
+
+/* Barre du bas */
+.bottom-bar {
+  display: flex; gap: 8px;
+  margin-top: 8px;
+}
+.btn-bottom {
+  flex: 1; padding: 11px;
+  background: var(--gris-card);
+  border: 1px solid var(--gris-border);
+  border-radius: var(--radius-sm);
+  font-size: 12px; font-weight: 500;
+  color: var(--gris-text);
+  font-family: var(--font-corps);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  transition: background 0.15s;
+}
+.btn-bottom:active { background: var(--gris-border); }
+
+/* ===== PAGE PARAMETRAGE ===== */
+.field-label {
+  font-size: 11px; font-weight: 600;
+  color: var(--gris-text);
+  display: block; margin-bottom: 5px;
+}
+.field-input {
+  width: 100%; padding: 10px 12px;
+  border: 1px solid var(--gris-border);
+  border-radius: var(--radius-sm);
+  font-size: 13px; font-family: var(--font-corps);
+  color: var(--texte);
+  background: var(--gris-bg);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.field-input:focus { border-color: var(--vert-moyen); }
+.field-row { margin-bottom: 12px; }
+.field-row:last-child { margin-bottom: 0; }
+.field-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+
+/* Mode jeu */
+.mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.mode-btn {
+  border: 1.5px solid var(--gris-border);
+  border-radius: var(--radius-sm);
+  padding: 12px 8px;
+  text-align: center;
+  cursor: pointer;
+  background: var(--gris-bg);
+  transition: all 0.15s;
+}
+.mode-btn.active { border-color: var(--vert-moyen); background: var(--vert-clair); }
+.mode-btn .mb-icon { font-size: 20px; display: block; margin-bottom: 5px; }
+.mode-btn .mb-titre {
+  font-size: 13px; font-weight: 600;
+  color: var(--texte);
+}
+.mode-btn.active .mb-titre { color: var(--vert-moyen); }
+.mode-btn .mb-sub { font-size: 11px; color: var(--gris-text); margin-top: 2px; }
+
+/* Durée jours */
+.jours-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.jour-btn {
+  border: 1.5px solid var(--gris-border);
+  border-radius: var(--radius-sm);
+  padding: 12px 8px;
+  text-align: center;
+  cursor: pointer;
+  background: var(--gris-bg);
+  transition: all 0.15s;
+}
+.jour-btn.active { border-color: var(--bleu); background: var(--bleu-clair); }
+.jour-btn .jb-num { font-size: 26px; font-weight: 700; color: var(--gris-text); }
+.jour-btn.active .jb-num { color: var(--bleu); }
+.jour-btn .jb-label { font-size: 11px; color: var(--gris-text); }
+
+/* Info box */
+.info-box {
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  display: flex; gap: 8px; align-items: flex-start;
+  margin-top: 8px; font-size: 12px; line-height: 1.5;
+}
+.info-box.blue { background: var(--bleu-clair); color: var(--bleu); }
+.info-box.green { background: var(--vert-clair); color: var(--vert-moyen); }
+.info-box.orange { background: var(--orange-clair); color: #BA7517; }
+
+/* Toggles */
+.toggle-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 11px 0;
+  border-top: 1px solid var(--gris-border);
+}
+.toggle-row:first-child { border-top: none; padding-top: 0; }
+.toggle-left { display: flex; align-items: center; gap: 10px; }
+.toggle-icon {
+  width: 34px; height: 34px;
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; flex-shrink: 0;
+}
+.toggle-titre { font-size: 13px; font-weight: 600; color: var(--texte); }
+.toggle-sub { font-size: 11px; color: var(--gris-text); margin-top: 1px; }
+.toggle-switch {
+  width: 42px; height: 24px;
+  border-radius: 12px;
+  background: var(--vert-moyen);
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.toggle-switch.off { background: var(--gris-border); }
+.toggle-switch::after {
+  content: '';
+  position: absolute;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  top: 3px; right: 3px;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+.toggle-switch.off::after { transform: translateX(-18px); }
+
+/* Prix spéciaux */
+.prix-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.prix-item {
+  background: var(--gris-bg);
+  border: 1.5px solid var(--gris-border);
+  border-radius: var(--radius-sm);
+  padding: 11px 10px;
+  display: flex; align-items: center; gap: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.prix-item.active { border-color: var(--vert-moyen); background: var(--vert-clair); }
+.prix-item .pi-icon { font-size: 18px; flex-shrink: 0; }
+.prix-item .pi-titre { font-size: 12px; font-weight: 600; color: var(--texte); }
+.prix-item .pi-sub { font-size: 10px; color: var(--gris-text); margin-top: 1px; }
+.prix-check {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid var(--gris-border);
+  margin-left: auto; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+}
+.prix-item.active .prix-check {
+  background: var(--vert-moyen);
+  border-color: var(--vert-moyen);
+  color: #fff;
+}
+
+/* Codes accès */
+.code-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.code-box {
+  background: var(--gris-bg);
+  border: 1px solid var(--gris-border);
+  border-radius: var(--radius-sm);
+  padding: 11px 12px;
+}
+.code-label {
+  font-size: 11px; font-weight: 600;
+  display: flex; align-items: center; gap: 4px;
+  margin-bottom: 6px;
+}
+.code-label.admin { color: var(--rouge); }
+.code-label.oper { color: var(--bleu); }
+.code-input {
+  width: 100%; padding: 8px 10px;
+  border: 1px solid var(--gris-border);
+  border-radius: 6px;
+  font-size: 18px; font-weight: 600;
+  font-family: var(--font-corps);
+  letter-spacing: 4px;
+  text-align: center;
+  background: var(--gris-card);
+  color: var(--texte);
+  outline: none;
+}
+.code-desc { font-size: 10px; color: var(--gris-text); margin-top: 5px; text-align: center; }
+
+/* Bouton lancer */
+.btn-lancer {
+  width: 100%;
+  padding: 15px;
+  background: linear-gradient(135deg, var(--vert-fonce), var(--vert-moyen));
+  color: #fff; border: none;
+  border-radius: var(--radius);
+  font-size: 16px; font-weight: 600;
+  font-family: var(--font-corps);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  margin-top: 16px;
+  box-shadow: 0 4px 16px rgba(45,122,79,0.35);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.btn-lancer:active { transform: scale(0.98); box-shadow: 0 2px 8px rgba(45,122,79,0.25); }
+.btn-lancer .lbadge {
+  background: rgba(255,255,255,0.2);
+  border-radius: 6px; padding: 2px 9px;
+  font-size: 11px;
+}
+
+/* ===== PAGE CONNEXION ===== */
+.connexion-wrap {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 40px 24px;
+  background: var(--gris-bg);
+}
+.connexion-logo {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--vert-fonce), var(--vert-moyen));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px; margin-bottom: 24px;
+  box-shadow: var(--shadow-lg);
+}
+.connexion-titre {
+  font-family: var(--font-titre);
+  font-size: 28px; color: var(--vert-fonce);
+  letter-spacing: 1px; margin-bottom: 6px; text-align: center;
+}
+.connexion-sub { font-size: 13px; color: var(--gris-text); margin-bottom: 32px; text-align: center; }
+.connexion-card {
+  background: var(--gris-card);
+  border: 1px solid var(--gris-border);
+  border-radius: var(--radius);
+  padding: 24px;
+  width: 100%;
+  box-shadow: var(--shadow);
+}
+.connexion-role {
+  display: flex; gap: 8px; margin-bottom: 20px;
+}
+.role-btn {
+  flex: 1; padding: 10px;
+  border: 1.5px solid var(--gris-border);
+  border-radius: var(--radius-sm);
+  background: var(--gris-bg);
+  font-size: 12px; font-weight: 600;
+  font-family: var(--font-corps);
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s;
+}
+.role-btn.active.admin { border-color: var(--rouge); background: var(--rouge-clair); color: var(--rouge); }
+.role-btn.active.oper { border-color: var(--bleu); background: var(--bleu-clair); color: var(--bleu); }
+.connexion-input-wrap { position: relative; margin-bottom: 16px; }
+.connexion-input {
+  width: 100%; padding: 14px 44px 14px 14px;
+  border: 1.5px solid var(--gris-border);
+  border-radius: var(--radius-sm);
+  font-size: 24px; font-weight: 600;
+  font-family: var(--font-corps);
+  letter-spacing: 6px; text-align: center;
+  background: var(--gris-bg); color: var(--texte);
+  outline: none; transition: border-color 0.15s;
+}
+.connexion-input:focus { border-color: var(--vert-moyen); }
+.connexion-input.error { border-color: var(--rouge); animation: shake 0.3s ease; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+.btn-eye {
+  position: absolute; right: 12px; top: 50%;
+  transform: translateY(-50%);
+  background: none; border: none;
+  font-size: 18px; cursor: pointer; color: var(--gris-text);
+}
+.btn-connexion {
+  width: 100%; padding: 14px;
+  background: linear-gradient(135deg, var(--vert-fonce), var(--vert-moyen));
+  color: #fff; border: none;
+  border-radius: var(--radius-sm);
+  font-size: 15px; font-weight: 600;
+  font-family: var(--font-corps);
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(45,122,79,0.3);
+  transition: transform 0.15s;
+}
+.btn-connexion:active { transform: scale(0.98); }
+.connexion-msg { text-align: center; font-size: 12px; margin-top: 12px; min-height: 18px; }
+.connexion-msg.error { color: var(--rouge); }
+.connexion-msg.ok { color: var(--vert-moyen); }
+
+/* ===== NOTIFICATIONS ===== */
+.notif {
+  position: fixed; bottom: 20px; left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--texte); color: #fff;
+  padding: 10px 20px; border-radius: 20px;
+  font-size: 13px; font-weight: 500;
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  transition: transform 0.3s ease;
+  white-space: nowrap;
+}
+.notif.show { transform: translateX(-50%) translateY(0); }
+.notif.success { background: var(--vert-moyen); }
+.notif.error { background: var(--rouge); }
+
+/* ===== LOADER ===== */
+.loader-overlay {
+  position: fixed; inset: 0;
+  background: rgba(240,242,233,0.9);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 999; display: none;
+}
+.loader-overlay.show { display: flex; }
+.loader { width: 40px; height: 40px; border: 3px solid var(--gris-border); border-top-color: var(--vert-moyen); border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+
+@keyframes bounce {
+  0% { transform: translate(0,0); }
+  25% { transform: translate(var(--tx,20px), var(--ty,-20px)); }
+  50% { transform: translate(calc(var(--tx,20px)*-1), var(--ty,20px)); }
+  75% { transform: translate(var(--tx,20px), calc(var(--ty,-20px)*-1)); }
+  100% { transform: translate(0,0); }
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 360px) {
+  .concours-grid { grid-template-columns: 1fr 1fr; }
+  .card-titre { font-size: 13px; }
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- LOADER -->
+  <div class="loader-overlay" id="loader"><div class="loader"></div></div>
+
+  <!-- NOTIFICATION -->
+  <div class="notif" id="notif"></div>
+
+  <!-- ==============================
+       PAGE 1 : ACCUEIL
+  ============================== -->
+  <div class="page active" id="page-accueil">
+    <div class="app-header">
+      <div class="header-top">
+        <div class="header-info">
+          <div class="header-badge">🎣 AAPPMA Gundershoffen</div>
+          <div class="header-titre">Concours de Pêche</div>
+          <div class="header-sub">Sélectionnez le type de concours</div>
+        </div>
+        <div class="header-icon">🏆</div>
+      </div>
+    </div>
+
+    <div class="page-body">
+
+      <!-- Dernier concours -->
+      <p class="section-label">Reprendre</p>
+      <div class="last-card" id="last-card" style="display:none;" onclick="reprendreConcours()">
+        <div class="last-icon" id="last-icon">🎣</div>
+        <div class="last-info">
+          <div class="last-titre" id="last-titre">—</div>
+          <div class="last-meta" id="last-meta">—</div>
+        </div>
+        <button class="btn-reprendre">▶ Reprendre</button>
+      </div>
+
+      <!-- Nouveau concours -->
+      <p class="section-label">Nouveau concours</p>
+      <div class="concours-grid">
+
+        <div class="concours-card carpo" onclick="ouvrirParametrage('carpo')">
+          <div class="card-icon" style="background:var(--vert-clair);">🎣</div>
+          <div class="card-titre">Carpodrome</div>
+          <div class="card-sub">14 postes · Indiv. ou Américaine</div>
+        </div>
+
+        <div class="concours-card feeder" onclick="ouvrirParametrage('feeder')">
+          <div class="card-icon" style="background:var(--bleu-clair);">🌊</div>
+          <div class="card-titre">Feeder</div>
+          <div class="card-sub">10 postes · Indiv. ou Américaine</div>
+        </div>
+
+        <div class="concours-card open" onclick="ouvrirParametrage('open')">
+          <div class="card-icon" style="background:var(--orange-clair);">🏆</div>
+          <div class="card-titre">Open</div>
+          <div class="card-sub">Carpo + Grand Étang · 2 jours</div>
+        </div>
+
+        <div class="concours-card enduro" onclick="ouvrirParametrage('enduro')">
+          <div class="card-icon" style="background:var(--rouge-clair);">⏱️</div>
+          <div class="card-titre">Enduro 72H</div>
+          <div class="card-sub">Équipes · Poids cumulé</div>
+        </div>
+
+      </div>
+
+      <!-- Modules annexes -->
+      <p class="section-label">Modules</p>
+
+      <div class="module-card" onclick="ouvrirTirage()">
+        <div class="module-icon" style="background:var(--vert-clair);">🎱</div>
+        <div class="module-info">
+          <div class="module-titre">Tirage au sort</div>
+          <div class="module-sub">Boules · Fléchettes · Précision</div>
+        </div>
+        <span class="module-arrow">›</span>
+      </div>
+
+      <div class="module-card" onclick="showNotif('Historique — bientôt disponible', 'ok')">
+        <div class="module-icon" style="background:var(--bleu-clair);">📋</div>
+        <div class="module-info">
+          <div class="module-titre">Historique</div>
+          <div class="module-sub">Concours passés et résultats</div>
+        </div>
+        <span class="module-arrow">›</span>
+      </div>
+
+      <!-- Barre bas -->
+      <div class="bottom-bar">
+        <button class="btn-bottom" onclick="ouvrirConnexion('admin')">⚙️ Admin</button>
+        <button class="btn-bottom" onclick="ouvrirConnexion('oper')">👤 Opérateur</button>
+      </div>
+
+    </div>
+  </div><!-- fin page-accueil -->
+
+
+  <!-- ==============================
+       PAGE 2 : CONNEXION
+  ============================== -->
+  <div class="page" id="page-connexion">
+    <div class="connexion-wrap">
+      <div class="connexion-logo">🎣</div>
+      <div class="connexion-titre">Connexion</div>
+      <div class="connexion-sub" id="connexion-sub">Entrez votre code d'accès</div>
+
+      <div class="connexion-card">
+        <!-- Choix rôle -->
+        <div class="connexion-role">
+          <button class="role-btn admin" id="role-admin" onclick="setRole('admin')">🛡️ Admin</button>
+          <button class="role-btn oper" id="role-oper" onclick="setRole('oper')">👤 Opérateur</button>
+        </div>
+
+        <!-- Champ code -->
+        <div class="connexion-input-wrap">
+          <input type="password" class="connexion-input" id="connexion-code" placeholder="••••••" maxlength="8" oninput="clearConnexionError()">
+          <button class="btn-eye" onclick="toggleConnexionVisu()">👁️</button>
+        </div>
+
+        <button class="btn-connexion" onclick="validerConnexion()">Valider</button>
+        <div class="connexion-msg" id="connexion-msg"></div>
+      </div>
+
+      <button style="margin-top:20px; background:none; border:none; color:var(--gris-text); font-size:13px; cursor:pointer; font-family:var(--font-corps);" onclick="naviguer('accueil')">← Retour</button>
+    </div>
+  </div><!-- fin page-connexion -->
+
+
+  <!-- ==============================
+       PAGE 3 : PARAMÉTRAGE
+  ============================== -->
+  <div class="page" id="page-parametrage">
+    <div class="app-header">
+      <div class="header-top">
+        <button class="btn-back" onclick="naviguer('accueil')">←</button>
+        <div class="header-info">
+          <div class="header-titre" id="param-titre">Carpodrome</div>
+          <div class="header-sub">Paramétrage du concours</div>
+        </div>
+        <div class="header-icon" id="param-icon">🎣</div>
+      </div>
+    </div>
+
+    <div class="page-body">
+
+      <!-- Informations -->
+      <p class="section-label">Informations</p>
+      <div class="card">
+        <div class="field-row">
+          <label class="field-label">📝 Titre du concours</label>
+          <input type="text" class="field-input" id="p-titre" value="Concours Carpodrome 2026">
+        </div>
+        <div class="field-2col" id="dates-container">
+          <div>
+            <label class="field-label">📅 Date J1</label>
+            <input type="date" class="field-input" id="p-date1">
+          </div>
+          <div id="date2-container">
+            <label class="field-label">📅 Date J2</label>
+            <input type="date" class="field-input" id="p-date2">
+          </div>
+        </div>
+      </div>
+
+      <!-- Durée (sauf Open et Enduro) -->
+      <div id="duree-section">
+        <p class="section-label">Durée</p>
+        <div class="card">
+          <div class="jours-grid">
+            <div class="jour-btn" id="jour1-btn" onclick="setJours(1)">
+              <div class="jb-num">1</div>
+              <div class="jb-label">jour</div>
+            </div>
+            <div class="jour-btn active" id="jour2-btn" onclick="setJours(2)">
+              <div class="jb-num">2</div>
+              <div class="jb-label">jours</div>
+            </div>
+          </div>
+          <div class="info-box blue" id="rive-info" style="display:none;">
+            ℹ️ 2 jours activé → Rive A (1→7) J1, inversion automatique Rive B (8→14) J2
+          </div>
+        </div>
+      </div>
+
+      <!-- Mode de jeu (sauf Enduro) -->
+      <div id="mode-section">
+        <p class="section-label">Mode de jeu</p>
+        <div class="card">
+          <div class="mode-grid">
+            <div class="mode-btn active" id="mode-indiv" onclick="setMode('indiv')">
+              <span class="mb-icon">👤</span>
+              <div class="mb-titre">Individuel</div>
+              <div class="mb-sub">1 pêcheur / poste</div>
+            </div>
+            <div class="mode-btn" id="mode-ame" onclick="setMode('americaine')">
+              <span class="mb-icon">👥</span>
+              <div class="mb-titre">Américaine</div>
+              <div class="mb-sub">2 pêcheurs / poste</div>
+            </div>
+          </div>
+          <div class="info-box green" id="postes-info" style="margin-top:8px;">
+            👁 Mode individuel → <strong id="nb-postes-label">14 postes</strong> disponibles
+          </div>
+        </div>
+      </div>
+
+      <!-- Options -->
+      <p class="section-label">Options</p>
+      <div class="card">
+        <div class="toggle-row">
+          <div class="toggle-left">
+            <div class="toggle-icon" style="background:var(--vert-clair);">🎱</div>
+            <div>
+              <div class="toggle-titre">Tirage automatique</div>
+              <div class="toggle-sub">Animation boules + anti-doublon</div>
+            </div>
+          </div>
+          <div class="toggle-switch" id="toggle-tirage" onclick="toggleSwitch('tirage')"></div>
+        </div>
+        <div class="toggle-row" id="toggle-periodes-row">
+          <div class="toggle-left">
+            <div class="toggle-icon" style="background:var(--bleu-clair);">🕐</div>
+            <div>
+              <div class="toggle-titre">Onglets Matin / Après-midi</div>
+              <div class="toggle-sub">Classement par période</div>
+            </div>
+          </div>
+          <div class="toggle-switch off" id="toggle-periodes" onclick="toggleSwitch('periodes')"></div>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-left">
+            <div class="toggle-icon" style="background:var(--orange-clair);">📱</div>
+            <div>
+              <div class="toggle-titre">Affichage public</div>
+              <div class="toggle-sub">Classement visible par tous</div>
+            </div>
+          </div>
+          <div class="toggle-switch" id="toggle-public" onclick="toggleSwitch('public')"></div>
+        </div>
+      </div>
+
+      <!-- Prix spéciaux -->
+      <p class="section-label">Prix spéciaux</p>
+      <div class="card">
+        <div class="prix-grid">
+          <div class="prix-item active" id="prix-pgp" onclick="togglePrix('pgp')">
+            <span class="pi-icon">🐟</span>
+            <div>
+              <div class="pi-titre">Plus grosse prise</div>
+              <div class="pi-sub">Commune ou Miroir</div>
+            </div>
+            <div class="prix-check">✓</div>
+          </div>
+          <div class="prix-item" id="prix-prestige" onclick="togglePrix('prestige')">
+            <span class="pi-icon">🏆</span>
+            <div>
+              <div class="pi-titre">Prestige</div>
+              <div class="pi-sub">Koï prime sur Amour Blanc</div>
+            </div>
+            <div class="prix-check"></div>
+          </div>
+          <div class="prix-item active" id="prix-j1" onclick="togglePrix('j1')">
+            <span class="pi-icon">📅</span>
+            <div>
+              <div class="pi-titre">Classement J1</div>
+              <div class="pi-sub">Poids jour 1</div>
+            </div>
+            <div class="prix-check">✓</div>
+          </div>
+          <div class="prix-item active" id="prix-j2" onclick="togglePrix('j2')">
+            <span class="pi-icon">📅</span>
+            <div>
+              <div class="pi-titre">Classement J2</div>
+              <div class="pi-sub">Poids jour 2</div>
+            </div>
+            <div class="prix-check">✓</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Codes d'accès -->
+      <p class="section-label">Codes d'accès</p>
+      <div class="card">
+        <div class="code-grid">
+          <div class="code-box">
+            <div class="code-label admin">🛡️ Admin</div>
+            <input type="password" class="code-input" id="code-admin" value="206160" maxlength="8">
+            <div class="code-desc">Accès complet</div>
+          </div>
+          <div class="code-box">
+            <div class="code-label oper">👤 Opérateur</div>
+            <input type="password" class="code-input" id="code-oper" value="911" maxlength="8">
+            <div class="code-desc">Saisie uniquement</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bouton lancer -->
+      <button class="btn-lancer" onclick="lancerConcours()">
+        ▶ Lancer le concours
+        <span class="lbadge" id="lancer-badge">Carpodrome · 2 jours</span>
+      </button>
+
+    </div>
+  </div><!-- fin page-parametrage -->
+
+
+  <!-- ==============================
+       PAGE 4 : INSCRIPTION PÊCHEURS
+  ============================== -->
+  <div class="page" id="page-inscription">
+    <div class="app-header">
+      <div class="header-top">
+        <button class="btn-back" onclick="naviguer('parametrage')">←</button>
+        <div class="header-info">
+          <div class="header-titre" id="insc-titre">Inscriptions</div>
+          <div class="header-sub" id="insc-sub">Enregistrement des pêcheurs</div>
+        </div>
+        <div class="header-icon" id="insc-icon">📋</div>
+      </div>
+    </div>
+
+    <div class="page-body">
+
+      <!-- Formulaire inscription -->
+      <p class="section-label">Nouveau pêcheur</p>
+      <div class="card" id="form-inscription">
+
+        <!-- Pêcheur 1 -->
+        <div class="field-2col">
+          <div>
+            <label class="field-label" id="label-nom1">NOM</label>
+            <input type="text" class="field-input" id="in-nom" placeholder="DUPONT" style="text-transform:uppercase;">
+          </div>
+          <div>
+            <label class="field-label" id="label-prenom1">Prénom</label>
+            <input type="text" class="field-input" id="in-prenom" placeholder="Pierre">
+          </div>
+        </div>
+
+        <!-- Pêcheur 2 (américaine) -->
+        <div id="pecheur2-fields" style="display:none;">
+          <div class="info-box green" style="margin-bottom:10px;">👥 Mode Américaine — saisissez le 2ème pêcheur</div>
+          <div class="field-2col">
+            <div>
+              <label class="field-label">NOM Pêcheur 2</label>
+              <input type="text" class="field-input" id="in-nom2" placeholder="MARTIN" style="text-transform:uppercase;">
+            </div>
+            <div>
+              <label class="field-label">Prénom Pêcheur 2</label>
+              <input type="text" class="field-input" id="in-prenom2" placeholder="Jean">
+            </div>
+          </div>
+        </div>
+
+        <!-- Sélection poste -->
+        <div class="field-row" style="margin-top:4px;">
+          <label class="field-label">🎯 Attribution du poste</label>
+          <select class="field-input" id="in-poste">
+            <option value="">— En attente de tirage —</option>
+          </select>
+        </div>
+
+        <!-- Rive info (Carpodrome 2j) -->
+        <div class="info-box blue" id="rive-insc-info" style="display:none; margin-top:4px;">
+          ℹ️ Rive A : postes 1→7 · Rive B : postes 8→14
+        </div>
+
+        <!-- Boutons -->
+        <div style="display:flex; gap:8px; margin-top:12px;">
+          <button class="btn-lancer" style="margin-top:0; flex:1;" id="btn-inscrire" onclick="inscrirePecheur()">
+            ✓ Inscrire
+          </button>
+          <button id="btn-annuler-insc" onclick="annulerDerniereInscription()"
+            style="display:none; padding:12px 16px; background:var(--orange-clair); color:#BA7517; border:1px solid var(--orange); border-radius:var(--radius); font-size:13px; font-weight:600; font-family:var(--font-corps); cursor:pointer;">
+            ↩ Annuler
+          </button>
+        </div>
+
+        <!-- Dernière inscription -->
+        <div id="last-insc-info" style="display:none; margin-top:10px;" class="info-box orange">
+          <span id="last-insc-text"></span>
+        </div>
+
+      </div>
+
+      <!-- Compteur postes -->
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+        <p class="section-label" style="margin:0;">Postes assignés</p>
+        <span id="insc-compteur" style="font-size:12px; font-weight:600; color:var(--vert-moyen);">0 / 0</span>
+      </div>
+
+      <!-- Liste postes assignés -->
+      <div id="liste-assignes"></div>
+
+      <!-- Liste en attente -->
+      <div id="attente-header" style="display:none; margin-top:12px;">
+        <p class="section-label">En attente de poste</p>
+      </div>
+      <div id="liste-attente"></div>
+
+      <!-- Bouton lancer pesée -->
+      <button class="btn-lancer" id="btn-lancer-pesee" onclick="lancerPesee()" style="margin-top:16px; display:none;">
+        ▶ Lancer la pesée
+        <span class="lbadge" id="pesee-badge">0 pêcheurs</span>
+      </button>
+
+    </div>
+  </div><!-- fin page-inscription -->
+  <!-- ==============================
+       PAGE 5 : PESÉE / SAISIE
+  ============================== -->
+  <div class="page" id="page-pesee">
+    <div class="app-header">
+      <div class="header-top">
+        <button class="btn-back" onclick="naviguer('inscription')">←</button>
+        <div class="header-info">
+          <div class="header-titre" id="pesee-header-titre">Pesée</div>
+          <div class="header-sub" id="pesee-header-sub">Saisie des captures</div>
+        </div>
+        <div class="header-icon" id="pesee-header-icon">⚖️</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;position:relative;z-index:1;">
+        <div style="background:rgba(255,255,255,0.12);border-radius:10px;padding:8px;text-align:center;">
+          <div style="font-size:17px;font-weight:700;color:#fff;" id="stat-poids">0.000 kg</div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.5px;">Poids total</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.12);border-radius:10px;padding:8px;text-align:center;">
+          <div style="font-size:17px;font-weight:700;color:#fff;" id="stat-poissons">0</div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.5px;">Poissons</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.12);border-radius:10px;padding:8px;text-align:center;">
+          <div style="font-size:17px;font-weight:700;color:#fff;" id="stat-postes">0/0</div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.5px;">Postes actifs</div>
+        </div>
+      </div>
+    </div>
+    <div class="page-body">
+      <div id="periode-tabs" style="display:none;margin-bottom:12px;">
+        <div style="display:flex;gap:6px;">
+          <button id="tab-matin" onclick="setPeriode('matin')" style="flex:1;padding:9px;border-radius:var(--radius-sm);border:1px solid var(--gris-border);background:var(--vert-moyen);color:#fff;font-size:12px;font-weight:600;font-family:var(--font-corps);cursor:pointer;">☀️ Matin</button>
+          <button id="tab-apres" onclick="setPeriode('apres-midi')" style="flex:1;padding:9px;border-radius:var(--radius-sm);border:1px solid var(--gris-border);background:var(--gris-card);color:var(--gris-text);font-size:12px;font-weight:600;font-family:var(--font-corps);cursor:pointer;">🌆 Après-midi</button>
+        </div>
+      </div>
+      <div id="jour-tabs" style="display:none;margin-bottom:12px;">
+        <div style="display:flex;gap:6px;">
+          <button id="tab-j1" onclick="setJourPesee(1)" style="flex:1;padding:9px;border-radius:var(--radius-sm);border:1px solid var(--gris-border);background:var(--bleu);color:#fff;font-size:12px;font-weight:600;font-family:var(--font-corps);cursor:pointer;">📅 Jour 1</button>
+          <button id="tab-j2" onclick="setJourPesee(2)" style="flex:1;padding:9px;border-radius:var(--radius-sm);border:1px solid var(--gris-border);background:var(--gris-card);color:var(--gris-text);font-size:12px;font-weight:600;font-family:var(--font-corps);cursor:pointer;">📅 Jour 2</button>
+        </div>
+      </div>
+      <p class="section-label">Sélectionnez un poste</p>
+      <div id="grille-postes" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;"></div>
+      <div id="panel-saisie" style="display:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <p class="section-label" style="margin:0;" id="panel-titre-label">Poste —</p>
+          <button onclick="fermerPanel()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--gris-text);">✕</button>
+        </div>
+        <div class="card">
+          <div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--gris-border);">
+            <div style="font-size:15px;font-weight:700;color:var(--texte);" id="panel-nom">—</div>
+            <div style="font-size:11px;color:var(--gris-text);margin-top:2px;" id="panel-meta">—</div>
+          </div>
+          <div style="margin-bottom:12px;">
+            <label class="field-label">⚖️ Poids du poisson (kg)</label>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input type="number" class="field-input" id="saisie-poids" placeholder="0.000" step="0.001" min="0" style="font-size:22px;font-weight:700;text-align:center;letter-spacing:2px;" onkeydown="if(event.key==='Enter')ajouterPoisson()">
+              <span style="font-size:14px;font-weight:600;color:var(--gris-text);flex-shrink:0;">kg</span>
+            </div>
+          </div>
+          <div id="espece-field" style="display:none;margin-bottom:12px;">
+            <label class="field-label">🐟 Espèce</label>
+            <select class="field-input" id="saisie-espece">
+              <option value="commune">Commune</option>
+              <option value="miroir">Miroir</option>
+              <option value="koi">Koï 🏆</option>
+              <option value="amour">Amour Blanc 🏆</option>
+            </select>
+          </div>
+          <button onclick="ajouterPoisson()" style="width:100%;padding:13px;background:linear-gradient(135deg,var(--vert-fonce),var(--vert-moyen));color:#fff;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:700;font-family:var(--font-corps);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+            ➕ Ajouter ce poisson
+          </button>
+          <div id="liste-poissons" style="margin-top:12px;"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:2px solid var(--gris-border);margin-top:4px;">
+            <span style="font-size:12px;font-weight:600;color:var(--gris-text);">Total poste</span>
+            <span style="font-size:20px;font-weight:700;color:var(--vert-moyen);" id="total-poste">0.000 kg</span>
+          </div>
+        </div>
+      </div>
+      <button class="btn-lancer" onclick="voirResultats()" style="margin-top:8px;background:linear-gradient(135deg,#1e3a8a,var(--bleu));">
+        🏆 Voir le classement
+        <span class="lbadge">Temps réel</span>
+      </button>
+    </div>
+  </div><!-- fin page-pesee -->
+
+
+
+  <!-- ==============================
+       PAGE 6 : RÉSULTATS / CLASSEMENT
+  ============================== -->
+  <div class="page" id="page-resultats">
+    <div class="app-header">
+      <div class="header-top">
+        <button class="btn-back" onclick="naviguer('pesee')">←</button>
+        <div class="header-info">
+          <div class="header-titre" id="res-titre">Classement</div>
+          <div class="header-sub" id="res-sub">Résultats en temps réel</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <div id="live-badge" style="background:#e53935;border-radius:20px;padding:3px 10px;font-size:11px;color:#fff;font-weight:600;display:flex;align-items:center;gap:4px;">
+            <div style="width:6px;height:6px;border-radius:50%;background:#fff;"></div>LIVE
+          </div>
+          <button onclick="imprimerResultats()" style="width:34px;height:34px;border-radius:8px;background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:16px;cursor:pointer;">🖨️</button>
+        </div>
+      </div>
+    </div>
+    <div class="page-body">
+      <!-- Onglets jour -->
+      <div id="res-jour-tabs" style="display:none;margin-bottom:10px;">
+        <div style="display:flex;gap:6px;">
+          <button id="res-tab-j1" onclick="setResJour(1)" style="flex:1;padding:8px;border-radius:var(--radius-sm);border:1px solid var(--gris-border);background:var(--bleu);color:#fff;font-size:12px;font-weight:600;font-family:var(--font-corps);cursor:pointer;">Jour 1</button>
+          <button id="res-tab-j2" onclick="setResJour(2)" style="flex:1;padding:8px;border-radius:var(--radius-sm);border:1px solid var(--gris-border);background:var(--gris-card);color:var(--gris-text);font-size:12px;font-weight:600;font-family:var(--font-corps);cursor:pointer;">Jour 2</button>
+          <button id="res-tab-total" onclick="setResJour(0)" style="flex:1;padding:8px;border-radius:var(--radius-sm);border:1px solid var(--gris-border);background:var(--gris-card);color:var(--gris-text);font-size:12px;font-weight:600;font-family:var(--font-corps);cursor:pointer;">Total</button>
+        </div>
+      </div>
+      <!-- Onglets période -->
+      <div id="res-periode-tabs" style="display:none;margin-bottom:10px;">
+        <div style="display:flex;gap:6px;">
+          <button id="res-tab-matin" onclick="setResPeriode('matin')" style="flex:1;padding:8px;border-radius:var(--radius-sm);border:1px solid var(--gris-border);background:var(--gris-card);color:var(--gris-text);font-size:12px;font-weight:600;font-family:var(--font-corps);cursor:pointer;">☀️ Matin</button>
+          <button id="res-tab-apres" onclick="setResPeriode('apres-midi')" style="flex:1;padding:8px;border-radius:var(--radius-sm);border:1px solid var(--gris-border);background:var(--gris-card);color:var(--gris-text);font-size:12px;font-weight:600;font-family:var(--font-corps);cursor:pointer;">🌆 Après-midi</button>
+          <button id="res-tab-gen" onclick="setResPeriode('general')" style="flex:1;padding:8px;border-radius:var(--radius-sm);border:1px solid var(--gris-border);background:var(--vert-moyen);color:#fff;font-size:12px;font-weight:600;font-family:var(--font-corps);cursor:pointer;">📊 Général</button>
+        </div>
+      </div>
+      <!-- Stats -->
+      <div id="res-stats" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;"></div>
+      <!-- Plus grosse prise -->
+      <div id="res-pgp" style="display:none;margin-bottom:14px;"></div>
+      <!-- Prix prestige Enduro -->
+      <div id="res-prestige" style="display:none;margin-bottom:14px;"></div>
+      <!-- Podium -->
+      <p class="section-label">Podium</p>
+      <div id="res-podium" style="display:flex;align-items:flex-end;justify-content:center;gap:6px;margin-bottom:14px;"></div>
+      <!-- Tableau classement -->
+      <p class="section-label">Classement complet</p>
+      <div id="res-tableau" style="background:var(--gris-card);border:1px solid var(--gris-border);border-radius:var(--radius);overflow:hidden;margin-bottom:14px;"></div>
+    </div>
+  </div><!-- fin page-resultats -->
+
+
+  <!-- ==============================
+       PAGE 7 : TIRAGE AU SORT
+  ============================== -->
+  <div class="page" id="page-tirage">
+    <div class="app-header">
+      <div class="header-top">
+        <button class="btn-back" onclick="naviguer('inscription')">←</button>
+        <div class="header-info">
+          <div class="header-titre" id="tirage-titre">Tirage au sort</div>
+          <div class="header-sub" id="tirage-sub">Attribution des postes</div>
+        </div>
+        <div class="header-icon">🎱</div>
+      </div>
+    </div>
+    <div class="page-body">
+
+      <!-- ÉTAPE 1 : Choix du mode -->
+      <div id="tirage-step1">
+        <p class="section-label">Mode de tirage</p>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
+          <div onclick="selectModeTirage('boules')" id="mode-boules" style="background:var(--gris-card);border:1.5px solid var(--vert-moyen);border-radius:var(--radius);padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer;">
+            <div style="width:44px;height:44px;border-radius:var(--radius-sm);background:var(--vert-clair);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🎱</div>
+            <div style="flex:1;">
+              <div style="font-size:14px;font-weight:700;color:var(--vert-moyen);">Tirage boules</div>
+              <div style="font-size:12px;color:var(--gris-text);">Animation aléatoire · carte à retourner</div>
+            </div>
+            <div id="radio-boules" style="width:20px;height:20px;border-radius:50%;background:var(--vert-moyen);border:2px solid var(--vert-moyen);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><div style="width:8px;height:8px;border-radius:50%;background:#fff;"></div></div>
+          </div>
+          <div onclick="selectModeTirage('flechettes')" id="mode-flechettes" style="background:var(--gris-card);border:1px solid var(--gris-border);border-radius:var(--radius);padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer;">
+            <div style="width:44px;height:44px;border-radius:var(--radius-sm);background:var(--bleu-clair);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🎯</div>
+            <div style="flex:1;">
+              <div style="font-size:14px;font-weight:700;color:var(--texte);">Fléchettes</div>
+              <div style="font-size:12px;color:var(--gris-text);">2×3 fléchettes · sudden death si égalité</div>
+            </div>
+            <div id="radio-flechettes" style="width:20px;height:20px;border-radius:50%;border:2px solid var(--gris-border);flex-shrink:0;"></div>
+          </div>
+          <div onclick="selectModeTirage('precision')" id="mode-precision" style="background:var(--gris-card);border:1px solid var(--gris-border);border-radius:var(--radius);padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer;">
+            <div style="width:44px;height:44px;border-radius:var(--radius-sm);background:var(--orange-clair);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🎣</div>
+            <div style="flex:1;">
+              <div style="font-size:14px;font-weight:700;color:var(--texte);">Tir de précision</div>
+              <div style="font-size:12px;color:var(--gris-text);">Distance au point cible en m/cm</div>
+            </div>
+            <div id="radio-precision" style="width:20px;height:20px;border-radius:50%;border:2px solid var(--gris-border);flex-shrink:0;"></div>
+          </div>
+        </div>
+        <!-- Distance cible (précision) -->
+        <div id="distance-config" style="display:none;">
+          <div class="card" style="margin-bottom:12px;">
+            <label class="field-label">🎯 Distance cible (mètres)</label>
+            <input type="number" class="field-input" id="distance-cible" value="35" step="0.5" min="1" style="font-size:18px;font-weight:700;text-align:center;">
+          </div>
+        </div>
+        <button class="btn-lancer" onclick="demarrerTirage()">
+          ▶ Démarrer le tirage
+          <span class="lbadge" id="tirage-mode-badge">Boules</span>
+        </button>
+      </div>
+
+      <!-- ÉTAPE 2 : Machine à boules -->
+      <div id="tirage-step2" style="display:none;">
+        <div style="text-align:center;margin-bottom:16px;">
+          <!-- Machine loto -->
+          <div id="loto-machine" style="width:150px;height:150px;border:8px solid rgba(26,74,46,0.8);border-radius:50%;margin:0 auto 16px;position:relative;background:radial-gradient(circle,#fff 0%,#ecf0f1 100%);overflow:hidden;box-shadow:inset 0 0 20px rgba(0,0,0,0.2);"></div>
+          <div id="drawn-name" style="font-size:18px;font-weight:700;color:var(--vert-fonce);margin-bottom:12px;min-height:50px;line-height:1.4;">Cliquez sur Lancer...</div>
+          <button id="btn-lancer-tirage" onclick="lancerTirageBoules()" class="btn-lancer" style="margin-top:0;margin-bottom:16px;">
+            🎱 Lancer le tirage
+          </button>
+          <div id="instruction-cartes" style="display:none;font-size:12px;color:var(--gris-text);margin-bottom:10px;">👆 Retournez une carte pour choisir le poste</div>
+        </div>
+
+        <!-- Info rive Carpo 2j -->
+        <div id="rive-tirage-info" style="display:none;" class="info-box blue" style="margin-bottom:12px;"></div>
+
+        <!-- Pool boules restantes -->
+        <p class="section-label">Postes disponibles</p>
+        <div id="pool-boules" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:12px;"></div>
+
+        <!-- Cartes à retourner -->
+        <p class="section-label" id="cartes-label" style="display:none;">Cartes à retourner</p>
+        <div id="cards-container" style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:14px;"></div>
+
+        <!-- Tableau résultats en direct -->
+        <p class="section-label">Résultats du tirage</p>
+        <div id="tirage-results" style="background:var(--gris-card);border:1px solid var(--gris-border);border-radius:var(--radius);overflow:hidden;margin-bottom:14px;">
+          <div style="background:#1e3a8a;padding:8px 12px;display:grid;grid-template-columns:1fr 50px 80px;gap:8px;">
+            <span style="font-size:10px;color:rgba(255,255,255,0.7);font-weight:600;text-transform:uppercase;">Pêcheur</span>
+            <span style="font-size:10px;color:rgba(255,255,255,0.7);font-weight:600;text-transform:uppercase;text-align:center;">Poste</span>
+            <span style="font-size:10px;color:rgba(255,255,255,0.7);font-weight:600;text-transform:uppercase;text-align:right;">Rive</span>
+          </div>
+          <div id="tirage-results-body"></div>
+        </div>
+
+        <button class="btn-lancer" id="btn-valider-tirage" onclick="validerTirageBoules()" style="background:linear-gradient(135deg,#1e3a8a,var(--bleu));display:none;">
+          ✓ Valider et lancer la pesée
+        </button>
+      </div>
+
+      <!-- ÉTAPE 3 : Fléchettes -->
+      <div id="tirage-step3" style="display:none;">
+        <!-- Barre progression -->
+        <div style="background:var(--gris-card);border:1px solid var(--gris-border);border-radius:var(--radius-sm);height:6px;margin-bottom:12px;overflow:hidden;">
+          <div id="flechette-progress" style="height:100%;background:var(--vert-moyen);transition:width 0.3s;width:0%;"></div>
+        </div>
+        <div style="font-size:11px;color:var(--gris-text);text-align:right;margin-bottom:12px;" id="flechette-progress-label">0 / 0 équipes</div>
+
+        <!-- Équipe en cours -->
+        <div class="card" style="border:1.5px solid var(--vert-moyen);margin-bottom:12px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+            <div id="fl-eq-num" style="width:32px;height:32px;border-radius:50%;background:var(--vert-moyen);color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">1</div>
+            <div>
+              <div id="fl-eq-nom" style="font-size:15px;font-weight:700;color:var(--texte);">—</div>
+              <div style="font-size:11px;color:var(--gris-text);">Volée <span id="fl-volee-num">1</span> · F<span id="fl-f-num">1</span>/3</div>
+            </div>
+            <div style="margin-left:auto;text-align:right;">
+              <div id="fl-total" style="font-size:24px;font-weight:700;color:var(--vert-moyen);">0</div>
+              <div style="font-size:10px;color:var(--gris-text);">pts</div>
+            </div>
+          </div>
+          <!-- Dots fléchettes -->
+          <div id="fl-dots" style="display:flex;justify-content:center;gap:8px;margin-bottom:14px;"></div>
+          <!-- Cible SVG -->
+          <div style="background:#1a1a2e;border-radius:10px;padding:12px;text-align:center;margin-bottom:10px;">
+            <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:8px;">🎯 Appuyez sur la zone touchée</div>
+            <svg id="dartboard-tirage" viewBox="0 0 450 450" width="240" height="240" style="cursor:pointer;display:block;margin:0 auto;"></svg>
+            <div id="fl-flash" style="display:none;margin-top:8px;background:var(--vert-clair);border-radius:20px;padding:5px 14px;font-size:14px;font-weight:600;color:var(--vert-moyen);display:inline-flex;align-items:center;gap:6px;"></div>
+          </div>
+          <!-- Sous-totaux volées -->
+          <div style="display:flex;gap:8px;justify-content:center;margin-bottom:10px;" id="fl-volee-scores"></div>
+          <!-- Actions -->
+          <div style="display:flex;gap:8px;">
+            <button onclick="fl_miss()" style="flex:1;padding:10px;border:1px solid var(--gris-border);border-radius:var(--radius-sm);background:var(--gris-bg);font-size:12px;font-weight:600;color:var(--gris-text);font-family:var(--font-corps);cursor:pointer;">❌ Hors cible</button>
+            <button onclick="fl_undo()" style="flex:1;padding:10px;border:1px solid var(--rouge);border-radius:var(--radius-sm);background:transparent;font-size:12px;font-weight:600;color:var(--rouge);font-family:var(--font-corps);cursor:pointer;">↩ Annuler</button>
+          </div>
+        </div>
+        <!-- Nav équipes -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <button onclick="fl_prev()" style="padding:12px;border:1px solid var(--gris-border);border-radius:var(--radius-sm);background:var(--gris-card);font-size:13px;font-weight:600;color:var(--gris-text);font-family:var(--font-corps);cursor:pointer;">← Précédent</button>
+          <button onclick="fl_next()" id="btn-fl-next" style="padding:12px;border:none;border-radius:var(--radius-sm);background:var(--vert-moyen);font-size:13px;font-weight:600;color:#fff;font-family:var(--font-corps);cursor:pointer;">Suivant →</button>
+        </div>
+      </div>
+
+      <!-- ÉTAPE 4 : Tir de précision -->
+      <div id="tirage-step4" style="display:none;">
+        <div class="info-box green" style="margin-bottom:12px;">
+          🎣 Distance cible : <strong id="dist-cible-label">35 m</strong> · 2 lancers par équipe · meilleur retenu
+        </div>
+        <p class="section-label">Saisie des distances</p>
+        <div id="precision-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;"></div>
+        <p class="section-label">Classement provisoire</p>
+        <div id="precision-classement" style="background:var(--gris-card);border:1px solid var(--gris-border);border-radius:var(--radius);overflow:hidden;margin-bottom:14px;"></div>
+        <button class="btn-lancer" onclick="validerPrecision()" style="background:linear-gradient(135deg,#1e3a8a,var(--bleu));">
+          ✓ Valider le classement et choisir les postes
+        </button>
+      </div>
+
+      <!-- ÉTAPE 5 : Assignation postes après classement fléchettes/précision -->
+      <div id="tirage-step5" style="display:none;">
+        <div class="info-box orange" style="margin-bottom:12px;" id="sudden-death-banner" style="display:none;"></div>
+        <p class="section-label">Ordre de choix des postes</p>
+        <div id="assignation-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;"></div>
+        <button class="btn-lancer" id="btn-valider-assignation" onclick="validerAssignation()" style="background:linear-gradient(135deg,#1e3a8a,var(--bleu));display:none;">
+          ✓ Lancer la pesée
+          <span class="lbadge" id="assignation-badge">0 postes assignés</span>
+        </button>
+      </div>
+
+    </div>
+  </div><!-- fin page-tirage -->
+
+</div><!-- fin app -->
+
+<!-- ==============================
+     FIREBASE + LOGIQUE
+============================== -->
+<script>
+// ===== CONFIG FIREBASE =====
+const firebaseConfig = {
+  apiKey: "AIzaSyB44m6DoeyQSNMctS0hKLpaPR5vNOTNsw0",
+  authDomain: "concours-peche.firebaseapp.com",
+  projectId: "concours-peche",
+  appId: "1:376446532224:web:4f9c1ffd2f4fe3ef450465",
+  databaseURL: "https://concours-peche-default-rtdb.europe-west1.firebasedatabase.app"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// ===== ÉTAT GLOBAL =====
+const state = {
+  typeFormat: null,    // 'carpo' | 'feeder' | 'open' | 'enduro'
+  role: null,          // 'admin' | 'oper'
+  concours: null,      // données du concours en cours
+  operateurId: null,   // ID unique de la session opérateur
+  verrous: {},         // verrous postes en cours de saisie
+  verrouInterval: null,// interval de renouvellement verrou
+  verrouListener: null,// listener Firebase verrous
+  config: {
+    jours: 1,
+    mode: 'indiv',
+    tirage: true,
+    periodes: false,
+    public: true,
+    prix: { pgp: true, prestige: false, j1: false, j2: false }
+  }
+};
+
+// ===== CONFIG PAR FORMAT =====
+const FORMAT_CONFIG = {
+  carpo: {
+    label: 'Carpodrome',
+    icon: '🎣',
+    postes: 14,
+    couleur: 'var(--vert-moyen)',
+    dureeEditable: true,
+    modeEditable: true,
+    rives: true,
+    prestige: false
+  },
+  feeder: {
+    label: 'Feeder',
+    icon: '🌊',
+    postes: 10,
+    couleur: 'var(--bleu)',
+    dureeEditable: false,
+    modeEditable: true,
+    rives: false,
+    prestige: false
+  },
+  open: {
+    label: 'Open',
+    icon: '🏆',
+    postes: 14,
+    couleur: 'var(--orange)',
+    dureeEditable: false,
+    modeEditable: false,
+    rives: false,
+    prestige: false,
+    joursForces: 2
+  },
+  enduro: {
+    label: 'Enduro 72H',
+    icon: '⏱️',
+    postes: 10,
+    couleur: 'var(--rouge)',
+    dureeEditable: false,
+    modeEditable: false,
+    rives: false,
+    prestige: true,
+    modeForce: 'americaine'
+  }
+};
+
+// ===== NAVIGATION =====
+function naviguer(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ===== ACCUEIL : DERNIER CONCOURS =====
+function chargerDernierConcours() {
+  db.ref('concours').orderByChild('timestamp').limitToLast(1).once('value').then(snap => {
+    if (!snap.exists()) return;
+    snap.forEach(child => {
+      const d = child.val();
+      if (!d || d.statut === 'termine') return;
+      const card = document.getElementById('last-card');
+      const cfg = FORMAT_CONFIG[d.type] || {};
+      document.getElementById('last-icon').textContent = cfg.icon || '🎣';
+      document.getElementById('last-titre').textContent = d.titre || 'Concours';
+      document.getElementById('last-meta').textContent = (d.dateJ1 || '') + ' · ' + (cfg.label || '') + (d.jours === 2 ? ' · 2 jours' : '');
+      card.style.display = 'flex';
+      state.concours = { id: child.key, ...d };
+    });
+  }).catch(() => {});
+}
+
+function reprendreConcours() {
+  if (!state.concours) return;
+  showNotif('Reprise du concours...', 'ok');
+  // Navigation vers la saisie (à implémenter)
+}
+
+// ===== OUVERTURE PARAMETRAGE =====
+function ouvrirParametrage(type) {
+  state.typeFormat = type;
+  const cfg = FORMAT_CONFIG[type];
+  if (!cfg) return;
+
+  // Header
+  document.getElementById('param-titre').textContent = cfg.label;
+  document.getElementById('param-icon').textContent = cfg.icon;
+
+  // Titre par défaut
+  const today = new Date();
+  const annee = today.getFullYear();
+  document.getElementById('p-titre').value = `Concours ${cfg.label} ${annee}`;
+  document.getElementById('p-date1').value = today.toISOString().split('T')[0];
+  document.getElementById('p-date2').value = '';
+
+  // Durée
+  const dureeSection = document.getElementById('duree-section');
+  if (!cfg.dureeEditable) {
+    dureeSection.style.display = 'none';
+    state.config.jours = cfg.joursForces || 1;
+  } else {
+    dureeSection.style.display = 'block';
+    setJours(1);
+  }
+
+  // Mode
+  const modeSection = document.getElementById('mode-section');
+  if (!cfg.modeEditable) {
+    modeSection.style.display = 'none';
+    state.config.mode = cfg.modeForce || 'indiv';
+  } else {
+    modeSection.style.display = 'block';
+    setMode('indiv');
+  }
+
+  // Prix prestige (Enduro uniquement)
+  document.getElementById('prix-prestige').style.display = cfg.prestige ? 'flex' : 'none';
+
+  // Classements J1/J2
+  const showJours = cfg.dureeEditable || cfg.joursForces === 2;
+  document.getElementById('prix-j1').style.display = showJours ? 'flex' : 'none';
+  document.getElementById('prix-j2').style.display = showJours ? 'flex' : 'none';
+
+  // Badge lancer
+  const jours = cfg.joursForces === 2 ? '· 2 jours' : '';
+  document.getElementById('lancer-badge').textContent = `${cfg.label} ${jours}`;
+
+  // Open — date J2 toujours visible
+  if (type === 'open') {
+    document.getElementById('date2-container').style.display = 'block';
+  }
+
+  naviguer('parametrage');
+}
+
+// ===== PARAMETRAGE : JOURS =====
+function setJours(nb) {
+  state.config.jours = nb;
+  document.getElementById('jour1-btn').className = 'jour-btn' + (nb === 1 ? ' active' : '');
+  document.getElementById('jour2-btn').className = 'jour-btn' + (nb === 2 ? ' active' : '');
+
+  const riveInfo = document.getElementById('rive-info');
+  const date2 = document.getElementById('date2-container');
+
+  if (nb === 2 && state.typeFormat === 'carpo') {
+    riveInfo.style.display = 'flex';
+  } else {
+    riveInfo.style.display = 'none';
+  }
+
+  date2.style.display = nb === 2 ? 'block' : 'none';
+
+  // Activer J1/J2 auto si 2 jours
+  if (nb === 2) {
+    activerPrix('j1', true);
+    activerPrix('j2', true);
+  } else {
+    activerPrix('j1', false);
+    activerPrix('j2', false);
+  }
+
+  majLancerBadge();
+}
+
+// ===== PARAMETRAGE : MODE =====
+function setMode(mode) {
+  state.config.mode = mode;
+  document.getElementById('mode-indiv').className = 'mode-btn' + (mode === 'indiv' ? ' active' : '');
+  document.getElementById('mode-ame').className = 'mode-btn' + (mode === 'americaine' ? ' active' : '');
+
+  const cfg = FORMAT_CONFIG[state.typeFormat];
+  const nb = cfg ? cfg.postes : 14;
+  const label = mode === 'indiv'
+    ? `${nb} postes disponibles`
+    : `${nb} postes (${nb} équipes de 2)`;
+  document.getElementById('nb-postes-label').textContent = label;
+}
+
+// ===== PARAMETRAGE : TOGGLES =====
+function toggleSwitch(id) {
+  const el = document.getElementById('toggle-' + id);
+  const isOff = el.classList.contains('off');
+  if (isOff) {
+    el.classList.remove('off');
+    state.config[id] = true;
+  } else {
+    el.classList.add('off');
+    state.config[id] = false;
+  }
+}
+
+// ===== PARAMETRAGE : PRIX =====
+function togglePrix(id) {
+  const el = document.getElementById('prix-' + id);
+  const active = el.classList.contains('active');
+  activerPrix(id, !active);
+}
+
+function activerPrix(id, actif) {
+  const el = document.getElementById('prix-' + id);
+  if (!el) return;
+  if (actif) {
+    el.classList.add('active');
+    el.querySelector('.prix-check').textContent = '✓';
+  } else {
+    el.classList.remove('active');
+    el.querySelector('.prix-check').textContent = '';
+  }
+  state.config.prix[id] = actif;
+}
+
+// ===== PARAMETRAGE : BADGE LANCER =====
+function majLancerBadge() {
+  const cfg = FORMAT_CONFIG[state.typeFormat];
+  if (!cfg) return;
+  const jours = state.config.jours === 2 ? '· 2 jours' : '';
+  document.getElementById('lancer-badge').textContent = `${cfg.label} ${jours}`.trim();
+}
+
+// ===== LANCER CONCOURS → ALLER INSCRIPTION =====
+function lancerConcours() {
+  const titre = document.getElementById('p-titre').value.trim();
+  const dateJ1 = document.getElementById('p-date1').value;
+  const codeAdmin = document.getElementById('code-admin').value.trim();
+  const codeOper = document.getElementById('code-oper').value.trim();
+
+  if (!titre) { showNotif('Saisissez un titre', 'error'); return; }
+  if (!dateJ1) { showNotif('Saisissez une date', 'error'); return; }
+  if (!codeAdmin) { showNotif('Code admin requis', 'error'); return; }
+  if (!codeOper) { showNotif('Code opérateur requis', 'error'); return; }
+  if (codeAdmin === codeOper) { showNotif('Les codes doivent être différents', 'error'); return; }
+
+  showLoader(true);
+
+  const concours = {
+    type: state.typeFormat,
+    titre,
+    dateJ1,
+    dateJ2: document.getElementById('p-date2').value || null,
+    jours: state.config.jours,
+    mode: state.config.mode,
+    options: {
+      tirage: state.config.tirage,
+      periodes: state.config.periodes,
+      public: state.config.public
+    },
+    prix: state.config.prix,
+    codeAdmin,
+    codeOper,
+    statut: 'inscription',
+    timestamp: Date.now(),
+    pecheurs: {}
+  };
+
+  const ref = db.ref('concours').push();
+  ref.set(concours).then(() => {
+    state.concours = { id: ref.key, ...concours };
+    state.role = 'admin';
+    showLoader(false);
+    showNotif('Concours créé ! ✓', 'success');
+    ouvrirInscription();
+  }).catch(err => {
+    showLoader(false);
+    showNotif('Erreur Firebase : ' + err.message, 'error');
+  });
+}
+
+// ===== CONNEXION =====
+let roleSelectionne = 'admin';
+
+function ouvrirConnexion(role) {
+  setRole(role);
+  naviguer('connexion');
+}
+
+function setRole(role) {
+  roleSelectionne = role;
+  document.getElementById('role-admin').className = 'role-btn admin' + (role === 'admin' ? ' active' : '');
+  document.getElementById('role-oper').className = 'role-btn oper' + (role === 'oper' ? ' active' : '');
+  document.getElementById('connexion-sub').textContent =
+    role === 'admin' ? 'Code administrateur' : 'Code opérateur';
+}
+
+function validerConnexion() {
+  const code = document.getElementById('connexion-code').value.trim();
+  if (!code) { showConnexionError('Entrez un code'); return; }
+
+  // Si pas de concours chargé, vérifier les codes par défaut
+  const codeAttendu = roleSelectionne === 'admin'
+    ? (state.concours ? state.concours.codeAdmin : '206160')
+    : (state.concours ? state.concours.codeOper : '911');
+
+  if (code === codeAttendu) {
+    state.role = roleSelectionne;
+    document.getElementById('connexion-msg').className = 'connexion-msg ok';
+    document.getElementById('connexion-msg').textContent = '✓ Accès autorisé';
+    setTimeout(() => {
+      naviguer('accueil');
+      showNotif(roleSelectionne === 'admin' ? '✓ Connecté en Admin' : '✓ Connecté en Opérateur', 'success');
+    }, 600);
+  } else {
+    showConnexionError('Code incorrect');
+    const input = document.getElementById('connexion-code');
+    input.classList.add('error');
+    setTimeout(() => input.classList.remove('error'), 500);
+  }
+}
+
+function showConnexionError(msg) {
+  document.getElementById('connexion-msg').className = 'connexion-msg error';
+  document.getElementById('connexion-msg').textContent = '✗ ' + msg;
+}
+
+function clearConnexionError() {
+  document.getElementById('connexion-msg').textContent = '';
+}
+
+function toggleConnexionVisu() {
+  const input = document.getElementById('connexion-code');
+  input.type = input.type === 'password' ? 'text' : 'password';
+}
+
+// ===== MODULE PESÉE =====
+
+let peseeListener = null;
+let posteActif = null;
+let periodePesee = 'general';
+let jourPesee = 1;
+
+function ouvrirPesee() {
+  const c = state.concours;
+  if (!c) return;
+  const cfg = FORMAT_CONFIG[c.type] || {};
+  document.getElementById('pesee-header-titre').textContent = cfg.label || 'Pesée';
+  document.getElementById('pesee-header-icon').textContent = cfg.icon || '⚖️';
+  const periodeEl = document.getElementById('periode-tabs');
+  periodeEl.style.display = c.options && c.options.periodes ? 'block' : 'none';
+  const jourEl = document.getElementById('jour-tabs');
+  jourEl.style.display = (c.jours === 2) ? 'block' : 'none';
+  jourPesee = 1;
+  document.getElementById('espece-field').style.display = c.type === 'enduro' ? 'block' : 'none';
+  if (peseeListener) peseeListener();
+  const refPecheurs = db.ref('concours/' + c.id + '/pecheurs');
+  peseeListener = () => refPecheurs.off();
+  refPecheurs.on('value', snap => {
+    state.concours.pecheurs = snap.val() || {};
+    majGrillePostes();
+    majStatsPesee();
+    if (posteActif) majPanelSaisie(posteActif);
+  });
+
+  // Écouter les verrous en temps réel
+  if (state.verrouListener) state.verrouListener();
+  const refVerrous = db.ref('concours/' + c.id + '/verrous');
+  state.verrouListener = () => refVerrous.off();
+  refVerrous.on('value', snap => {
+    state.verrous = snap.val() || {};
+    majGrillePostes(); // Mettre à jour l'affichage des verrous
+  });
+
+  // ID unique de cet opérateur pour la session
+  if (!state.operateurId) {
+    state.operateurId = state.role + '_' + Date.now().toString(36);
+  }
+
+  // Libérer les verrous si on quitte la page
+  window.addEventListener('beforeunload', () => {
+    if (posteActif) libererVerrou(posteActif);
+  });
+
+  naviguer('pesee');
+}
+
+function getWeightsFiltres(pecheur) {
+  const c = state.concours;
+  let weights = pecheur.weights || [];
+  if (!Array.isArray(weights)) weights = Object.values(weights);
+  if (c.jours === 2) weights = weights.filter(w => (w.jour || 1) === jourPesee);
+  if (c.options && c.options.periodes && periodePesee !== 'general') {
+    weights = weights.filter(w => w.period === periodePesee);
+  }
+  return weights;
+}
+
+function majGrillePostes() {
+  const c = state.concours;
+  if (!c) return;
+  const cfg = FORMAT_CONFIG[c.type] || {};
+  const nbPostes = cfg.postes || 14;
+  const pecheurs = c.pecheurs || {};
+  const grille = document.getElementById('grille-postes');
+  if (!grille) return;
+  let html = '';
+  for (let i = 1; i <= nbPostes; i++) {
+    const pecheur = Object.values(pecheurs).find(p => p.poste === i);
+    if (!pecheur) continue;
+    const weights = getWeightsFiltres(pecheur);
+    const total = weights.reduce((s, w) => s + (w.poids || 0), 0);
+    const nbPois = weights.length;
+    const hasCapture = nbPois > 0;
+    const isActif = posteActif === i;
+    let riveBadge = '';
+    if (c.type === 'carpo' && c.jours === 2) {
+      const rive = i <= 7 ? 'A' : 'B';
+      const bg = rive === 'A' ? 'var(--vert-clair)' : 'var(--bleu-clair)';
+      const col = rive === 'A' ? 'var(--vert-moyen)' : 'var(--bleu)';
+      riveBadge = '<span style="font-size:9px;background:' + bg + ';color:' + col + ';border-radius:4px;padding:1px 5px;margin-left:4px;">R.' + rive + '</span>';
+    }
+    const nom = c.mode === 'americaine' && pecheur.nom2
+      ? pecheur.nom + ' & ' + pecheur.nom2
+      : pecheur.nom + ' ' + pecheur.prenom;
+    const verrous = state.verrous || {};
+    const verrou = verrous[i];
+    const verrouille = verrou && verrou.operateur && verrou.operateur !== state.operateurId && Date.now() - (verrou.ts || 0) < 30000;
+    const border = isActif ? '2px solid var(--orange)' : verrouille ? '1.5px solid var(--rouge)' : hasCapture ? '1.5px solid var(--vert-moyen)' : '1px solid var(--gris-border)';
+    const dot = verrouille
+      ? '<div style="position:absolute;top:6px;right:6px;font-size:14px;" title="En cours de saisie">🔒</div>'
+      : hasCapture ? '<div style="position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:50%;background:var(--vert-moyen);"></div>' : '';
+    const color = hasCapture ? 'var(--vert-moyen)' : 'var(--gris-text)';
+    const valAff = hasCapture ? total.toFixed(3) + ' kg' : '—';
+    html += '<div onclick="ouvrirPoste(' + i + ')" style="background:var(--gris-card);border:' + border + ';border-radius:var(--radius);padding:12px;cursor:pointer;position:relative;">'
+      + dot
+      + '<div style="font-size:11px;font-weight:600;color:var(--gris-text);text-transform:uppercase;letter-spacing:0.5px;">Poste ' + i + riveBadge + '</div>'
+      + '<div style="font-size:12px;font-weight:700;color:var(--texte);margin:4px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + nom + '</div>'
+      + '<div style="font-size:18px;font-weight:700;color:' + color + ';">' + valAff + '</div>'
+      + '<div style="font-size:11px;color:var(--gris-text);">' + nbPois + ' poisson' + (nbPois > 1 ? 's' : '') + '</div>'
+      + '</div>';
+  }
+  grille.innerHTML = html || '<div class="info-box green">Aucun pêcheur inscrit</div>';
+}
+
+function ouvrirPoste(numPoste) {
+  const c = state.concours;
+  if (!c) return;
+
+  // Vérifier si le poste est verrouillé par un autre opérateur
+  const verrous = state.verrous || {};
+  const v = verrous[numPoste];
+  if (v && v.operateur && v.operateur !== state.operateurId && Date.now() - (v.ts || 0) < 30000) {
+    showNotif('⚠️ Poste ' + numPoste + ' en cours de saisie par ' + v.operateur, 'error');
+    return;
+  }
+
+  // Libérer l'ancien poste si on en avait un
+  if (posteActif && posteActif !== numPoste) libererVerrou(posteActif);
+
+  posteActif = numPoste;
+
+  // Poser le verrou sur Firebase
+  const refVerrou = db.ref('concours/' + c.id + '/verrous/' + numPoste);
+  refVerrou.set({ operateur: state.operateurId, ts: Date.now() });
+
+  // Renouveler le verrou toutes les 15s tant que le panel est ouvert
+  clearInterval(state.verrouInterval);
+  state.verrouInterval = setInterval(() => {
+    if (posteActif === numPoste) {
+      refVerrou.set({ operateur: state.operateurId, ts: Date.now() });
+    } else {
+      clearInterval(state.verrouInterval);
+    }
+  }, 15000);
+
+  majGrillePostes();
+  majPanelSaisie(numPoste);
+  document.getElementById('panel-saisie').style.display = 'block';
+  document.getElementById('saisie-poids').value = '';
+  setTimeout(() => {
+    document.getElementById('panel-saisie').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.getElementById('saisie-poids').focus();
+  }, 100);
+}
+
+function fermerPanel() {
+  if (posteActif) libererVerrou(posteActif);
+  clearInterval(state.verrouInterval);
+  posteActif = null;
+  document.getElementById('panel-saisie').style.display = 'none';
+  majGrillePostes();
+}
+
+function libererVerrou(numPoste) {
+  const c = state.concours;
+  if (!c || !numPoste) return;
+  const refVerrou = db.ref('concours/' + c.id + '/verrous/' + numPoste);
+  refVerrou.once('value').then(snap => {
+    const v = snap.val();
+    // Ne libérer que si c'est notre propre verrou
+    if (v && v.operateur === state.operateurId) refVerrou.remove();
+  });
+}
+
+function majPanelSaisie(numPoste) {
+  const c = state.concours;
+  if (!c) return;
+  const pecheurs = c.pecheurs || {};
+  const pecheur = Object.values(pecheurs).find(p => p.poste === numPoste);
+  if (!pecheur) return;
+  const ame = c.mode === 'americaine';
+  const nomAff = ame && pecheur.nom2
+    ? pecheur.nom + ' ' + pecheur.prenom + ' & ' + pecheur.nom2 + ' ' + pecheur.prenom2
+    : pecheur.nom + ' ' + pecheur.prenom;
+  document.getElementById('panel-titre-label').textContent = 'Poste ' + numPoste;
+  document.getElementById('panel-nom').textContent = nomAff;
+  let meta = 'Poste ' + numPoste;
+  if (c.jours === 2) meta += ' · Jour ' + jourPesee;
+  if (c.options && c.options.periodes && periodePesee !== 'general') meta += ' · ' + (periodePesee === 'matin' ? 'Matin' : 'Après-midi');
+  document.getElementById('panel-meta').textContent = meta;
+  const weights = getWeightsFiltres(pecheur);
+  const total = weights.reduce((s, w) => s + (w.poids || 0), 0);
+  document.getElementById('total-poste').textContent = total.toFixed(3) + ' kg';
+  const pecId = Object.keys(pecheurs).find(k => pecheurs[k].poste === numPoste);
+  const listeEl = document.getElementById('liste-poissons');
+  if (weights.length === 0) {
+    listeEl.innerHTML = '<div style="text-align:center;color:var(--gris-text);font-size:12px;padding:10px 0;">Aucune capture</div>';
+  } else {
+    listeEl.innerHTML = weights.map((w, idx) => {
+      const especeLabel = w.espece ? ' · ' + w.espece.charAt(0).toUpperCase() + w.espece.slice(1) + (w.espece === 'koi' || w.espece === 'amour' ? ' 🏆' : '') : '';
+      return '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--gris-border);">'
+        + '<div style="width:24px;height:24px;border-radius:50%;background:var(--gris-bg);font-size:11px;font-weight:600;color:var(--gris-text);display:flex;align-items:center;justify-content:center;flex-shrink:0;">' + (idx+1) + '</div>'
+        + '<div style="flex:1;font-size:14px;font-weight:600;color:var(--texte);">' + w.poids.toFixed(3) + ' kg' + especeLabel + '</div>'
+        + '<button onclick="supprimerPoisson(' + "'" + pecId + "'" + ',' + idx + ')" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--rouge);opacity:0.7;padding:4px;">🗑</button>'
+        + '</div>';
+    }).join('');
+  }
+}
+
+function ajouterPoisson() {
+  const c = state.concours;
+  if (!c || posteActif === null) return;
+  const poidsVal = parseFloat(document.getElementById('saisie-poids').value);
+  if (!poidsVal || poidsVal <= 0) { showNotif('Saisissez un poids valide', 'error'); return; }
+  const pecheurs = c.pecheurs || {};
+  const pecId = Object.keys(pecheurs).find(k => pecheurs[k].poste === posteActif);
+  if (!pecId) return;
+  const espece = c.type === 'enduro' ? document.getElementById('saisie-espece').value : null;
+  const newWeight = { poids: poidsVal, jour: jourPesee, period: periodePesee, timestamp: Date.now() };
+  if (espece) newWeight.espece = espece;
+
+  showLoader(true);
+  const refW = db.ref('concours/' + c.id + '/pecheurs/' + pecId + '/weights');
+
+  // TRANSACTION ATOMIQUE — impossible d'écraser une saisie simultanée
+  refW.transaction(currentData => {
+    const arr = Array.isArray(currentData) ? [...currentData]
+      : currentData ? Object.values(currentData)
+      : [];
+    arr.push(newWeight);
+    return arr;
+  }).then(result => {
+    showLoader(false);
+    if (!result.committed) {
+      showNotif('Conflit détecté, réessayez', 'error');
+      return;
+    }
+    document.getElementById('saisie-poids').value = '';
+    document.getElementById('saisie-poids').focus();
+    showNotif('✓ ' + poidsVal.toFixed(3) + ' kg ajouté', 'success');
+  }).catch(err => { showLoader(false); showNotif('Erreur : ' + err.message, 'error'); });
+}
+
+function supprimerPoisson(pecId, idx) {
+  const c = state.concours;
+  if (!c) return;
+  if (!confirm('Supprimer cette capture ?')) return;
+  showLoader(true);
+  const refW = db.ref('concours/' + c.id + '/pecheurs/' + pecId + '/weights');
+
+  // TRANSACTION ATOMIQUE — suppression sécurisée par index
+  refW.transaction(currentData => {
+    const arr = Array.isArray(currentData) ? [...currentData]
+      : currentData ? Object.values(currentData)
+      : [];
+    if (idx < 0 || idx >= arr.length) return currentData; // Index invalide → abandon
+    arr.splice(idx, 1);
+    return arr;
+  }).then(result => {
+    showLoader(false);
+    if (!result.committed) {
+      showNotif('Conflit détecté, réessayez', 'error');
+      return;
+    }
+    showNotif('Capture supprimée', 'ok');
+  }).catch(err => { showLoader(false); showNotif('Erreur : ' + err.message, 'error'); });
+}
+
+function majStatsPesee() {
+  const c = state.concours;
+  if (!c) return;
+  const pecheurs = Object.values(c.pecheurs || {});
+  let totalPoids = 0, totalPoissons = 0, postesActifs = 0;
+  const nbPostes = (FORMAT_CONFIG[c.type] || {}).postes || 14;
+  pecheurs.filter(p => p.poste).forEach(p => {
+    const weights = getWeightsFiltres(p);
+    const total = weights.reduce((s, w) => s + (w.poids || 0), 0);
+    if (total > 0) postesActifs++;
+    totalPoids += total;
+    totalPoissons += weights.length;
+  });
+  const sp = document.getElementById('stat-poids');
+  const spo = document.getElementById('stat-poissons');
+  const sps = document.getElementById('stat-postes');
+  if (sp) sp.textContent = totalPoids.toFixed(3) + ' kg';
+  if (spo) spo.textContent = totalPoissons;
+  if (sps) sps.textContent = postesActifs + '/' + nbPostes;
+}
+
+function setPeriode(periode) {
+  periodePesee = periode;
+  const tm = document.getElementById('tab-matin');
+  const ta = document.getElementById('tab-apres');
+  if (tm) { tm.style.background = periode === 'matin' ? 'var(--vert-moyen)' : 'var(--gris-card)'; tm.style.color = periode === 'matin' ? '#fff' : 'var(--gris-text)'; }
+  if (ta) { ta.style.background = periode === 'apres-midi' ? 'var(--vert-moyen)' : 'var(--gris-card)'; ta.style.color = periode === 'apres-midi' ? '#fff' : 'var(--gris-text)'; }
+  majGrillePostes(); majStatsPesee();
+  if (posteActif) majPanelSaisie(posteActif);
+}
+
+function setJourPesee(jour) {
+  jourPesee = jour;
+  const tj1 = document.getElementById('tab-j1');
+  const tj2 = document.getElementById('tab-j2');
+  if (tj1) { tj1.style.background = jour === 1 ? 'var(--bleu)' : 'var(--gris-card)'; tj1.style.color = jour === 1 ? '#fff' : 'var(--gris-text)'; }
+  if (tj2) { tj2.style.background = jour === 2 ? 'var(--bleu)' : 'var(--gris-card)'; tj2.style.color = jour === 2 ? '#fff' : 'var(--gris-text)'; }
+  majGrillePostes(); majStatsPesee();
+  if (posteActif) majPanelSaisie(posteActif);
+}
+
+function voirResultats() {
+  naviguer('resultats');
+  setTimeout(() => majResultats(), 200);
+}
+
+// ===== MODULE INSCRIPTION =====
+
+let inscriptionListener = null;
+let lastAdded = null;
+
+function ouvrirInscription() {
+  const c = state.concours;
+  if (!c) return;
+  const cfg = FORMAT_CONFIG[c.type] || {};
+
+  // Header
+  document.getElementById('insc-titre').textContent = cfg.label || 'Inscriptions';
+  document.getElementById('insc-icon').textContent = cfg.icon || '📋';
+  document.getElementById('insc-sub').textContent =
+    c.mode === 'americaine' ? 'Mode Américaine — binômes' : 'Mode Individuel';
+
+  // Champs pêcheur 2 si américaine
+  const ame = c.mode === 'americaine';
+  document.getElementById('pecheur2-fields').style.display = ame ? 'block' : 'none';
+  document.getElementById('label-nom1').textContent = ame ? 'NOM Pêcheur 1' : 'NOM';
+  document.getElementById('label-prenom1').textContent = ame ? 'Prénom Pêcheur 1' : 'Prénom';
+  document.getElementById('btn-inscrire').textContent = ame ? '✓ Inscrire le binôme' : '✓ Inscrire';
+
+  // Info rive Carpodrome 2j
+  const riveInfo = document.getElementById('rive-insc-info');
+  riveInfo.style.display = (c.type === 'carpo' && c.jours === 2) ? 'flex' : 'none';
+
+  // Mise à jour liste postes dispo
+  majSelectPoste();
+
+  // Écoute Firebase en temps réel
+  if (inscriptionListener) inscriptionListener();
+  const refPecheurs = db.ref(`concours/${c.id}/pecheurs`);
+  inscriptionListener = () => refPecheurs.off();
+  refPecheurs.on('value', snap => {
+    const data = snap.val() || {};
+    state.concours.pecheurs = data;
+    majListeInscription();
+    majSelectPoste();
+  });
+
+  naviguer('inscription');
+}
+
+function majSelectPoste() {
+  const c = state.concours;
+  if (!c) return;
+  const cfg = FORMAT_CONFIG[c.type] || {};
+  const nbPostes = cfg.postes || 14;
+  const pecheurs = c.pecheurs || {};
+  const sel = document.getElementById('in-poste');
+  if (!sel) return;
+
+  // Postes déjà pris
+  const postesPris = Object.values(pecheurs).map(p => p.poste).filter(Boolean);
+
+  sel.innerHTML = '<option value="">— En attente de tirage —</option>';
+  for (let i = 1; i <= nbPostes; i++) {
+    if (!postesPris.includes(i)) {
+      // Pour Carpodrome 2j : indiquer la rive
+      let label = `Poste ${i}`;
+      if (c.type === 'carpo' && c.jours === 2) {
+        label += i <= 7 ? ' (Rive A)' : ' (Rive B)';
+      }
+      sel.innerHTML += `<option value="${i}">${label}</option>`;
+    }
+  }
+}
+
+function inscrirePecheur() {
+  const c = state.concours;
+  if (!c) return;
+
+  const nom = document.getElementById('in-nom').value.trim().toUpperCase();
+  const prenom = document.getElementById('in-prenom').value.trim();
+  const poste = document.getElementById('in-poste').value;
+  const ame = c.mode === 'americaine';
+
+  if (!nom || !prenom) { showNotif('Nom et prénom requis', 'error'); return; }
+
+  const pecheur = {
+    nom, prenom,
+    poste: poste ? parseInt(poste) : null,
+    weights: [],
+    timestamp: Date.now()
+  };
+
+  if (ame) {
+    const nom2 = document.getElementById('in-nom2').value.trim().toUpperCase();
+    const prenom2 = document.getElementById('in-prenom2').value.trim();
+    if (!nom2 || !prenom2) { showNotif('Nom et prénom du 2ème pêcheur requis', 'error'); return; }
+    pecheur.nom2 = nom2;
+    pecheur.prenom2 = prenom2;
+  }
+
+  showLoader(true);
+  const refPecheurs = db.ref(`concours/${c.id}/pecheurs`);
+  const newRef = refPecheurs.push();
+  newRef.set(pecheur).then(() => {
+    lastAdded = { id: newRef.key, ...pecheur };
+    showLoader(false);
+    showNotif('✓ ' + nom + (ame ? ' & ' + (pecheur.nom2 || '') : '') + ' inscrit', 'success');
+
+    // Afficher bouton annuler + info
+    document.getElementById('btn-annuler-insc').style.display = 'block';
+    document.getElementById('last-insc-info').style.display = 'flex';
+    document.getElementById('last-insc-text').textContent =
+      `Dernière inscription : ${nom} ${prenom}${ame && pecheur.nom2 ? ' & ' + pecheur.nom2 + ' ' + pecheur.prenom2 : ''}${poste ? ' — Poste ' + poste : ' — En attente'}`;
+
+    // Vider le formulaire
+    document.getElementById('in-nom').value = '';
+    document.getElementById('in-prenom').value = '';
+    if (ame) {
+      document.getElementById('in-nom2').value = '';
+      document.getElementById('in-prenom2').value = '';
+    }
+    document.getElementById('in-poste').value = '';
+  }).catch(err => {
+    showLoader(false);
+    showNotif('Erreur : ' + err.message, 'error');
+  });
+}
+
+function annulerDerniereInscription() {
+  if (!lastAdded || !state.concours) return;
+  showLoader(true);
+  db.ref(`concours/${state.concours.id}/pecheurs/${lastAdded.id}`).remove().then(() => {
+    showLoader(false);
+    showNotif('Inscription annulée', 'ok');
+    lastAdded = null;
+    document.getElementById('btn-annuler-insc').style.display = 'none';
+    document.getElementById('last-insc-info').style.display = 'none';
+  }).catch(err => {
+    showLoader(false);
+    showNotif('Erreur : ' + err.message, 'error');
+  });
+}
+
+function supprimerPecheur(id) {
+  if (!state.concours) return;
+  if (!confirm('Supprimer ce pêcheur ?')) return;
+  showLoader(true);
+  db.ref(`concours/${state.concours.id}/pecheurs/${id}`).remove().then(() => {
+    showLoader(false);
+    showNotif('Pêcheur supprimé', 'ok');
+  }).catch(err => {
+    showLoader(false);
+    showNotif('Erreur : ' + err.message, 'error');
+  });
+}
+
+function majListeInscription() {
+  const c = state.concours;
+  if (!c) return;
+  const pecheurs = c.pecheurs || {};
+  const cfg = FORMAT_CONFIG[c.type] || {};
+  const nbPostes = cfg.postes || 14;
+  const ame = c.mode === 'americaine';
+
+  const assignes = Object.entries(pecheurs)
+    .filter(([, p]) => p.poste)
+    .sort(([, a], [, b]) => a.poste - b.poste);
+
+  const attente = Object.entries(pecheurs)
+    .filter(([, p]) => !p.poste)
+    .sort(([, a], [, b]) => (a.timestamp || 0) - (b.timestamp || 0));
+
+  // Compteur
+  document.getElementById('insc-compteur').textContent = `${assignes.length} / ${nbPostes}`;
+
+  // Bouton lancer pesée
+  const btnPesee = document.getElementById('btn-lancer-pesee');
+  if (assignes.length > 0) {
+    btnPesee.style.display = 'flex';
+    document.getElementById('pesee-badge').textContent = `${assignes.length} poste${assignes.length > 1 ? 's' : ''}`;
+  } else {
+    btnPesee.style.display = 'none';
+  }
+
+  // Liste assignés
+  const listeEl = document.getElementById('liste-assignes');
+  if (assignes.length === 0) {
+    listeEl.innerHTML = `<div class="info-box green">ℹ️ Aucun pêcheur assigné pour l'instant</div>`;
+  } else {
+    listeEl.innerHTML = assignes.map(([id, p]) => {
+      const rive = (c.type === 'carpo' && c.jours === 2)
+        ? `<span style="font-size:10px; background:${p.poste <= 7 ? 'var(--vert-clair)' : 'var(--bleu-clair)'}; color:${p.poste <= 7 ? 'var(--vert-moyen)' : 'var(--bleu)'}; border-radius:6px; padding:2px 7px; margin-left:5px;">${p.poste <= 7 ? 'Rive A' : 'Rive B'}</span>`
+        : '';
+      const nom2line = ame && p.nom2
+        ? `<div style="font-size:11px; color:var(--gris-text); margin-top:2px;">& ${p.nom2} ${p.prenom2}</div>`
+        : '';
+      return `
+        <div class="card" style="padding:12px 14px; margin-bottom:8px; display:flex; align-items:center; gap:10px; border-left:3px solid var(--vert-moyen);">
+          <div style="font-size:16px; font-weight:700; color:var(--bleu); min-width:32px;">${p.poste}${rive}</div>
+          <div style="flex:1;">
+            <div style="font-size:13px; font-weight:600; color:var(--texte);">${p.nom} ${p.prenom}</div>
+            ${nom2line}
+          </div>
+          <button onclick="supprimerPecheur('${id}')"
+            style="background:none; border:none; font-size:16px; cursor:pointer; color:var(--rouge); opacity:0.6; padding:4px;">🗑</button>
+        </div>`;
+    }).join('');
+  }
+
+  // Liste en attente
+  const attenteHeader = document.getElementById('attente-header');
+  const attenteEl = document.getElementById('liste-attente');
+  if (attente.length > 0) {
+    attenteHeader.style.display = 'block';
+    attenteEl.innerHTML = attente.map(([id, p]) => {
+      const nom2line = ame && p.nom2
+        ? `<div style="font-size:11px; color:var(--gris-text); margin-top:2px;">& ${p.nom2} ${p.prenom2}</div>`
+        : '';
+      return `
+        <div class="card" style="padding:12px 14px; margin-bottom:8px; display:flex; align-items:center; gap:10px; opacity:0.7; border-style:dashed;">
+          <div style="font-size:13px; color:var(--gris-text); min-width:32px;">—</div>
+          <div style="flex:1;">
+            <div style="font-size:13px; font-weight:600; color:var(--texte);">${p.nom} ${p.prenom}</div>
+            ${nom2line}
+            <div style="font-size:11px; color:var(--gris-text); margin-top:2px;">En attente de poste</div>
+          </div>
+          <button onclick="assigner('${id}')"
+            style="background:var(--vert-clair); border:1px solid var(--vert-moyen); border-radius:6px; padding:5px 10px; font-size:11px; font-weight:600; color:var(--vert-moyen); cursor:pointer; font-family:var(--font-corps);">
+            Assigner
+          </button>
+          <button onclick="supprimerPecheur('${id}')"
+            style="background:none; border:none; font-size:16px; cursor:pointer; color:var(--rouge); opacity:0.6; padding:4px;">🗑</button>
+        </div>`;
+    }).join('');
+  } else {
+    attenteHeader.style.display = 'none';
+    attenteEl.innerHTML = '';
+  }
+}
+
+function assigner(id) {
+  const c = state.concours;
+  if (!c) return;
+  const pecheurs = c.pecheurs || {};
+  const p = pecheurs[id];
+  if (!p) return;
+
+  const cfg = FORMAT_CONFIG[c.type] || {};
+  const nbPostes = cfg.postes || 14;
+  const postesPris = Object.values(pecheurs).map(x => x.poste).filter(Boolean);
+
+  let options = '<option value="">— Choisir un poste —</option>';
+  for (let i = 1; i <= nbPostes; i++) {
+    if (!postesPris.includes(i)) {
+      let label = `Poste ${i}`;
+      if (c.type === 'carpo' && c.jours === 2) label += i <= 7 ? ' (Rive A)' : ' (Rive B)';
+      options += `<option value="${i}">${label}</option>`;
+    }
+  }
+
+  // Mini modal inline
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px;';
+  modal.innerHTML = `
+    <div style="background:var(--gris-card);border-radius:var(--radius);padding:20px;width:100%;max-width:320px;box-shadow:var(--shadow-lg);">
+      <div style="font-size:15px;font-weight:700;color:var(--texte);margin-bottom:4px;">Assigner un poste</div>
+      <div style="font-size:13px;color:var(--gris-text);margin-bottom:14px;">${p.nom} ${p.prenom}${p.nom2 ? ' & ' + p.nom2 + ' ' + p.prenom2 : ''}</div>
+      <select id="modal-poste-sel" style="width:100%;padding:10px;border:1px solid var(--gris-border);border-radius:var(--radius-sm);font-size:13px;font-family:var(--font-corps);margin-bottom:14px;background:var(--gris-bg);">${options}</select>
+      <div style="display:flex;gap:8px;">
+        <button onclick="this.closest('[style*=fixed]').remove()" style="flex:1;padding:10px;border:1px solid var(--gris-border);border-radius:var(--radius-sm);background:var(--gris-bg);font-size:13px;font-weight:600;font-family:var(--font-corps);cursor:pointer;">Annuler</button>
+        <button onclick="confirmerAssignation('${id}',this)" style="flex:1;padding:10px;background:var(--vert-moyen);color:#fff;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:600;font-family:var(--font-corps);cursor:pointer;">Valider</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+function confirmerAssignation(id, btn) {
+  const modal = btn.closest('[style*=fixed]');
+  const poste = document.getElementById('modal-poste-sel').value;
+  if (!poste) { showNotif('Choisissez un poste', 'error'); return; }
+  if (!state.concours) return;
+  showLoader(true);
+  db.ref(`concours/${state.concours.id}/pecheurs/${id}/poste`).set(parseInt(poste)).then(() => {
+    showLoader(false);
+    showNotif(`✓ Poste ${poste} assigné`, 'success');
+    if (modal) modal.remove();
+  }).catch(err => {
+    showLoader(false);
+    showNotif('Erreur : ' + err.message, 'error');
+  });
+}
+
+function lancerPesee() {
+  if (!state.concours) return;
+  db.ref('concours/' + state.concours.id + '/statut').set('pesee').then(() => {
+    showNotif('Pesée lancée ! ✓', 'success');
+    ouvrirPesee();
+  });
+}
+
+
+
+// ===== MODULE TIRAGE =====
+
+let modeTirage = 'boules';
+let tirageParticipants = [];
+let tiragePostes = [];
+let currentDrawn = null;
+let isDrawing = false;
+let flThrows = [];
+let flCurrentEq = 0;
+let flScores = {};
+let precisionScores = {};
+let assignationClassement = [];
+let dartboardBuilt = false;
+
+function ouvrirTirage() {
+  const c = state.concours;
+  if (!c) return;
+  const cfg = FORMAT_CONFIG[c.type] || {};
+  document.getElementById('tirage-titre').textContent = cfg.label + ' · Tirage';
+  document.getElementById('tirage-sub').textContent = c.mode === 'americaine' ? 'Mode Américaine' : 'Mode Individuel';
+  // Masquer fléchettes/précision si pas Enduro
+  const fl = document.getElementById('mode-flechettes');
+  const pr = document.getElementById('mode-precision');
+  if (fl) fl.style.display = c.type === 'enduro' ? 'flex' : 'none';
+  if (pr) pr.style.display = c.type === 'enduro' ? 'flex' : 'none';
+  selectModeTirage('boules');
+  showTirageStep(1);
+  naviguer('tirage');
+}
+
+function selectModeTirage(mode) {
+  modeTirage = mode;
+  ['boules','flechettes','precision'].forEach(m => {
+    const card = document.getElementById('mode-' + m);
+    const radio = document.getElementById('radio-' + m);
+    if (!card || !radio) return;
+    if (m === mode) {
+      card.style.border = '1.5px solid var(--vert-moyen)';
+      radio.style.background = 'var(--vert-moyen)';
+      radio.style.borderColor = 'var(--vert-moyen)';
+      radio.innerHTML = '<div style="width:8px;height:8px;border-radius:50%;background:#fff;"></div>';
+    } else {
+      card.style.border = '1px solid var(--gris-border)';
+      radio.style.background = 'transparent';
+      radio.style.borderColor = 'var(--gris-border)';
+      radio.innerHTML = '';
+    }
+  });
+  const badges = { boules: 'Boules', flechettes: 'Fléchettes', precision: 'Précision' };
+  const badge = document.getElementById('tirage-mode-badge');
+  if (badge) badge.textContent = badges[mode] || mode;
+  const distConf = document.getElementById('distance-config');
+  if (distConf) distConf.style.display = mode === 'precision' ? 'block' : 'none';
+}
+
+function showTirageStep(n) {
+  [1,2,3,4,5].forEach(i => {
+    const el = document.getElementById('tirage-step' + i);
+    if (el) el.style.display = i === n ? 'block' : 'none';
+  });
+}
+
+function demarrerTirage() {
+  const c = state.concours;
+  if (!c) return;
+  const pecheurs = c.pecheurs || {};
+  tirageParticipants = Object.entries(pecheurs)
+    .filter(([, p]) => p.poste || modeTirage !== 'boules')
+    .map(([id, p]) => ({ id, ...p }));
+
+  if (modeTirage === 'boules') demarrerTirageBoules();
+  else if (modeTirage === 'flechettes') demarrerFlechettes();
+  else if (modeTirage === 'precision') demarrerPrecision();
+}
+
+// ===== TIRAGE BOULES =====
+function demarrerTirageBoules() {
+  const c = state.concours;
+  if (!c) return;
+  const cfg = FORMAT_CONFIG[c.type] || {};
+  const nbPostes = cfg.postes || 14;
+  const pecheurs = Object.values(c.pecheurs || {});
+
+  // Construire liste participants sans poste
+  tirageParticipants = Object.entries(c.pecheurs || {})
+    .filter(([, p]) => !p.poste)
+    .map(([id, p]) => ({ id, ...p }));
+
+  if (tirageParticipants.length === 0) {
+    showNotif('Tous les pêcheurs ont déjà un poste', 'ok');
+    return;
+  }
+
+  // Construire pool postes disponibles
+  const postesPris = pecheurs.filter(p => p.poste).map(p => p.poste);
+  tiragePostes = [];
+  for (let i = 1; i <= nbPostes; i++) {
+    if (!postesPris.includes(i)) {
+      let rive = '';
+      if (c.type === 'carpo' && c.jours === 2) rive = i <= 7 ? 'A' : 'B';
+      tiragePostes.push({ num: i, rive });
+    }
+  }
+  tiragePostes = shuffleArr(tiragePostes);
+
+  // Init machine boules
+  initLotoBalls();
+  majPoolBoules();
+  majTirageResults();
+
+  // Info rive
+  const riveInfo = document.getElementById('rive-tirage-info');
+  if (c.type === 'carpo' && c.jours === 2) {
+    riveInfo.style.display = 'flex';
+    riveInfo.textContent = 'ℹ️ Rive A : postes 1→7 · Rive B : postes 8→14 · J2 = inversion automatique';
+  } else {
+    riveInfo.style.display = 'none';
+  }
+
+  // Cartes
+  initCartes();
+  showTirageStep(2);
+}
+
+function initLotoBalls() {
+  const machine = document.getElementById('loto-machine');
+  if (!machine) return;
+  machine.innerHTML = '';
+  const colors = ['#e74c3c','#3498db','#f1c40f','#9b59b6','#e67e22','#1abc9c','#2d7a4f','#185FA5'];
+  for (let i = 0; i < 15; i++) {
+    const ball = document.createElement('div');
+    ball.style.cssText = 'width:24px;height:24px;border-radius:50%;position:absolute;font-size:10px;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;';
+    ball.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+    ball.style.left = Math.random() * 105 + 5 + 'px';
+    ball.style.top = Math.random() * 105 + 5 + 'px';
+    ball.style.setProperty('--tx', (Math.random() * 80 - 40) + 'px');
+    ball.style.setProperty('--ty', (Math.random() * 80 - 40) + 'px');
+    ball.style.animationDelay = Math.random() + 's';
+    machine.appendChild(ball);
+  }
+}
+
+function initCartes() {
+  const board = document.getElementById('cards-container');
+  const label = document.getElementById('cartes-label');
+  if (!board) return;
+  board.innerHTML = '';
+  if (tiragePostes.length === 0) return;
+  label.style.display = 'block';
+  tiragePostes.forEach((poste, index) => {
+    const card = document.createElement('div');
+    card.style.cssText = 'width:80px;height:110px;perspective:1000px;cursor:pointer;';
+    card.id = 'card-' + index;
+    const riveLabel = poste.rive ? '<span style="font-size:10px;opacity:0.7;">Rive ' + poste.rive + '</span><br>' : '';
+    card.innerHTML = '<div id="card-inner-' + index + '" style="width:100%;height:100%;transition:transform 0.6s;transform-style:preserve-3d;position:relative;">'
+      + '<div style="position:absolute;width:100%;height:100%;backface-visibility:hidden;background:#fff;border:2px solid var(--gris-border);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:36px;color:#ecf0f1;font-weight:700;">?</div>'
+      + '<div style="position:absolute;width:100%;height:100%;backface-visibility:hidden;background:var(--vert-moyen);border:2px solid var(--vert-fonce);border-radius:8px;transform:rotateY(180deg);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font-weight:700;text-align:center;padding:4px;">'
+      + riveLabel
+      + '<span style="font-size:22px;">P.' + poste.num + '</span>'
+      + '</div></div>';
+    card.onclick = () => retournerCarte(card, index);
+    board.appendChild(card);
+  });
+}
+
+function lancerTirageBoules() {
+  if (tirageParticipants.length === 0) {
+    showNotif('Tirage terminé !', 'success');
+    return;
+  }
+  if (isDrawing) return;
+
+  const btn = document.getElementById('btn-lancer-tirage');
+  const machine = document.getElementById('loto-machine');
+  const nameDisplay = document.getElementById('drawn-name');
+  const instr = document.getElementById('instruction-cartes');
+
+  btn.disabled = true;
+  isDrawing = true;
+  instr.style.display = 'none';
+
+  // Animation brassage
+  machine.querySelectorAll('div').forEach(b => {
+    b.style.animation = 'bounce 0.6s infinite alternate cubic-bezier(0.5,0.05,1,0.5)';
+  });
+  nameDisplay.textContent = 'Brassage en cours...';
+
+  setTimeout(() => {
+    machine.querySelectorAll('div').forEach(b => b.style.animation = '');
+    const idx = Math.floor(Math.random() * tirageParticipants.length);
+    currentDrawn = tirageParticipants.splice(idx, 1)[0];
+    const nom = currentDrawn.nom2
+      ? currentDrawn.nom + ' ' + currentDrawn.prenom + ' & ' + currentDrawn.nom2 + ' ' + currentDrawn.prenom2
+      : currentDrawn.nom + ' ' + currentDrawn.prenom;
+    nameDisplay.innerHTML = "C'est au tour de :<br><span style='color:var(--vert-moyen);font-size:20px;font-weight:700;'>" + nom + "</span>";
+    instr.style.display = 'block';
+    isDrawing = false;
+  }, 2000);
+}
+
+function retournerCarte(cardEl, index) {
+  if (isDrawing || !currentDrawn || cardEl.dataset.flipped) return;
+  const poste = tiragePostes[index];
+  if (!poste) return;
+
+  cardEl.dataset.flipped = '1';
+  const inner = document.getElementById('card-inner-' + index);
+  if (inner) inner.style.transform = 'rotateY(180deg)';
+  cardEl.style.cursor = 'default';
+
+  // Sauvegarder assignation
+  currentDrawn._posteAssigne = poste.num;
+
+  // Afficher dans tableau
+  majTirageResults(currentDrawn, poste);
+  majPoolBoules(poste.num);
+
+  currentDrawn = null;
+  document.getElementById('instruction-cartes').style.display = 'none';
+
+  const btn = document.getElementById('btn-lancer-tirage');
+  if (tirageParticipants.length > 0) {
+    btn.disabled = false;
+    btn.textContent = '🎱 Pêcheur suivant';
+    document.getElementById('drawn-name').textContent = 'En attente du prochain lancer...';
+  } else {
+    btn.style.display = 'none';
+    document.getElementById('drawn-name').innerHTML = "<span style='color:var(--vert-moyen);font-size:16px;'>✓ Tirage terminé !</span>";
+    document.getElementById('btn-valider-tirage').style.display = 'flex';
+  }
+}
+
+function majPoolBoules(posteRetire) {
+  const pool = document.getElementById('pool-boules');
+  if (!pool) return;
+  pool.innerHTML = tiragePostes.map(p => {
+    const pris = posteRetire && p.num === posteRetire;
+    const bg = pris ? 'var(--gris-border)' : (p.rive === 'A' ? 'var(--vert-moyen)' : p.rive === 'B' ? 'var(--bleu)' : 'var(--vert-moyen)');
+    const deco = pris ? 'line-through;opacity:0.4' : '';
+    return '<div style="width:32px;height:32px;border-radius:50%;background:' + bg + ';display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;text-decoration:' + deco + ';">' + p.num + '</div>';
+  }).join('');
+}
+
+function majTirageResults(participant, poste) {
+  const tbody = document.getElementById('tirage-results-body');
+  if (!tbody || !participant || !poste) return;
+  const nom = participant.nom2
+    ? participant.nom + ' & ' + participant.nom2
+    : participant.nom + ' ' + participant.prenom;
+  const riveLabel = poste.rive ? 'Rive ' + poste.rive : '—';
+  const row = '<div style="display:grid;grid-template-columns:1fr 50px 80px;gap:8px;padding:9px 12px;border-bottom:1px solid var(--gris-border);animation:fadeIn 0.3s ease;">'
+    + '<span style="font-size:13px;font-weight:600;color:var(--texte);">' + nom + '</span>'
+    + '<span style="font-size:15px;font-weight:700;color:var(--bleu);text-align:center;">' + poste.num + '</span>'
+    + '<span style="font-size:11px;color:var(--gris-text);text-align:right;">' + riveLabel + '</span>'
+    + '</div>';
+  tbody.insertAdjacentHTML('afterbegin', row);
+}
+
+function validerTirageBoules() {
+  showNotif('Tirage sauvegardé ✓', 'success');
+  setTimeout(() => ouvrirPesee(), 800);
+}
+
+// ===== FLÉCHETTES =====
+const DART_NUMBERS = [20,1,18,4,13,6,10,15,2,17,3,19,7,16,8,11,14,9,12,5];
+
+function buildDartboard(svgId) {
+  const svg = document.getElementById(svgId);
+  if (!svg) return;
+  svg.innerHTML = '';
+  const cx = 225, cy = 225;
+  const R = { outer:170, dblIn:158, triOut:105, triIn:95, oBull:32, bull:14 };
+  const cBlack = '#1a1a1a', cWhite = '#f5f5dc', cRed = '#e63946', cGreen = '#2d6a4f';
+
+  const bg = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  bg.setAttribute('cx',cx); bg.setAttribute('cy',cy); bg.setAttribute('r',R.outer+28); bg.setAttribute('fill','#111');
+  svg.appendChild(bg);
+
+  function seg(rO,rI,sA,eA,fill,val,lbl) {
+    const x1O=cx+rO*Math.cos(sA),y1O=cy+rO*Math.sin(sA);
+    const x2O=cx+rO*Math.cos(eA),y2O=cy+rO*Math.sin(eA);
+    const x1I=cx+rI*Math.cos(eA),y1I=cy+rI*Math.sin(eA);
+    const x2I=cx+rI*Math.cos(sA),y2I=cy+rI*Math.sin(sA);
+    const d='M'+x1O+' '+y1O+' A'+rO+' '+rO+' 0 0 1 '+x2O+' '+y2O+' L'+x1I+' '+y1I+' A'+rI+' '+rI+' 0 0 0 '+x2I+' '+y2I+'Z';
+    const p=document.createElementNS('http://www.w3.org/2000/svg','path');
+    p.setAttribute('d',d); p.setAttribute('fill',fill);
+    p.setAttribute('stroke','#333'); p.setAttribute('stroke-width','0.5');
+    p.dataset.value=val; p.dataset.label=lbl; p.style.cursor='pointer';
+    return p;
+  }
+
+  for(let i=0;i<20;i++){
+    const num=DART_NUMBERS[i];
+    const sA=(i*18-99)*Math.PI/180, eA=((i+1)*18-99)*Math.PI/180;
+    const mA=(sA+eA)/2, even=i%2===0;
+    const sc=even?cBlack:cWhite, sp1=even?cRed:cGreen, sp2=even?cGreen:cRed;
+    svg.appendChild(seg(R.outer,R.dblIn,sA,eA,sp1,num*2,'Double '+num));
+    svg.appendChild(seg(R.dblIn,R.triOut,sA,eA,sc,num,'Simple '+num));
+    svg.appendChild(seg(R.triOut,R.triIn,sA,eA,sp2,num*3,'Triple '+num));
+    svg.appendChild(seg(R.triIn,R.oBull,sA,eA,sc,num,'Simple '+num));
+    const tR=R.outer+20;
+    const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x',cx+tR*Math.cos(mA)); t.setAttribute('y',cy+tR*Math.sin(mA));
+    t.setAttribute('text-anchor','middle'); t.setAttribute('dominant-baseline','middle');
+    t.setAttribute('fill','#e2e8f0'); t.setAttribute('font-size','14'); t.setAttribute('font-weight','900');
+    t.textContent=num; svg.appendChild(t);
+  }
+  const ob=document.createElementNS('http://www.w3.org/2000/svg','circle');
+  ob.setAttribute('cx',cx); ob.setAttribute('cy',cy); ob.setAttribute('r',R.oBull);
+  ob.setAttribute('fill',cGreen); ob.dataset.value=25; ob.dataset.label='Outer Bull (25)'; ob.style.cursor='pointer';
+  svg.appendChild(ob);
+  const bull=document.createElementNS('http://www.w3.org/2000/svg','circle');
+  bull.setAttribute('cx',cx); bull.setAttribute('cy',cy); bull.setAttribute('r',R.bull);
+  bull.setAttribute('fill',cRed); bull.dataset.value=50; bull.dataset.label='Bull (50)'; bull.style.cursor='pointer';
+  svg.appendChild(bull);
+
+  svg.querySelectorAll('path,circle[data-value]').forEach(el => {
+    el.addEventListener('click', () => fl_addThrow(parseInt(el.dataset.value), el.dataset.label));
+  });
+}
+
+function demarrerFlechettes() {
+  const c = state.concours;
+  if (!c) return;
+  const pecheurs = Object.entries(c.pecheurs || {}).filter(([,p]) => p.poste);
+  flThrows = [];
+  flCurrentEq = 0;
+  flScores = {};
+  pecheurs.forEach(([id]) => { flScores[id] = []; });
+  tirageParticipants = pecheurs.map(([id,p]) => ({id,...p}));
+
+  if (!dartboardBuilt) { buildDartboard('dartboard-tirage'); dartboardBuilt = true; }
+  majFlEcran();
+  showTirageStep(3);
+}
+
+function majFlEcran() {
+  const c = state.concours;
+  if (!c) return;
+  const pecheurs = tirageParticipants;
+  const nb = pecheurs.length;
+  const eq = pecheurs[flCurrentEq];
+  if (!eq) return;
+
+  const progEl = document.getElementById('flechette-progress');
+  const progLabel = document.getElementById('flechette-progress-label');
+  if (progEl) progEl.style.width = ((flCurrentEq / nb) * 100) + '%';
+  if (progLabel) progLabel.textContent = flCurrentEq + ' / ' + nb + ' équipes';
+
+  const numEl = document.getElementById('fl-eq-num');
+  const nomEl = document.getElementById('fl-eq-nom');
+  const voleeEl = document.getElementById('fl-volee-num');
+  const fEl = document.getElementById('fl-f-num');
+  const totalEl = document.getElementById('fl-total');
+
+  const throws = flScores[eq.id] || [];
+  const nom = eq.nom2 ? eq.nom + ' & ' + eq.nom2 : eq.nom + ' ' + eq.prenom;
+  if (numEl) numEl.textContent = flCurrentEq + 1;
+  if (nomEl) nomEl.textContent = nom;
+  const curr = throws.length;
+  if (voleeEl) voleeEl.textContent = curr < 3 ? '1' : '2';
+  if (fEl) fEl.textContent = (curr % 3) + 1;
+  if (totalEl) totalEl.textContent = throws.reduce((s,t) => s + t.value, 0);
+
+  // Dots
+  const dotsEl = document.getElementById('fl-dots');
+  if (dotsEl) {
+    dotsEl.innerHTML = Array.from({length:6},(_,i) => {
+      const scored = throws[i];
+      const isCurr = i === curr;
+      const bg = scored ? 'var(--orange)' : isCurr ? 'var(--bleu)' : 'var(--gris-bg)';
+      const border = isCurr ? '2.5px solid var(--bleu)' : '2px solid var(--gris-border)';
+      const txt = scored ? scored.value : (i+1);
+      return '<div style="width:34px;height:34px;border-radius:50%;background:' + bg + ';border:' + border + ';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:' + (scored ? '#fff' : 'var(--gris-text)') + ';">' + txt + '</div>';
+    }).join('');
+  }
+
+  // Sous-totaux
+  const vsEl = document.getElementById('fl-volee-scores');
+  if (vsEl) {
+    const v1 = throws.slice(0,3).reduce((s,t)=>s+t.value,0);
+    const v2 = throws.slice(3,6).reduce((s,t)=>s+t.value,0);
+    vsEl.innerHTML = '<div style="background:var(--gris-bg);border-radius:8px;padding:6px 14px;text-align:center;"><div style="font-size:10px;color:var(--gris-text);">Volée 1</div><div style="font-size:16px;font-weight:700;">' + v1 + '</div></div>'
+      + '<div style="background:var(--gris-bg);border-radius:8px;padding:6px 14px;text-align:center;"><div style="font-size:10px;color:var(--gris-text);">Volée 2</div><div style="font-size:16px;font-weight:700;">' + v2 + '</div></div>'
+      + '<div style="background:var(--vert-clair);border-radius:8px;padding:6px 14px;text-align:center;"><div style="font-size:10px;color:var(--vert-moyen);">Total</div><div style="font-size:16px;font-weight:700;color:var(--vert-moyen);">' + (v1+v2) + '</div></div>';
+  }
+}
+
+function fl_addThrow(val, label) {
+  const eq = tirageParticipants[flCurrentEq];
+  if (!eq) return;
+  const throws = flScores[eq.id] || [];
+  if (throws.length >= 6) return;
+  throws.push({ value: val, label: label || val + ' pts' });
+  flScores[eq.id] = throws;
+  const flash = document.getElementById('fl-flash');
+  if (flash) {
+    flash.style.display = 'inline-flex';
+    flash.textContent = '+' + val + ' — ' + (label || '');
+    setTimeout(() => flash.style.display = 'none', 1200);
+  }
+  majFlEcran();
+}
+
+function fl_miss() { fl_addThrow(0, 'Hors cible'); }
+function fl_undo() {
+  const eq = tirageParticipants[flCurrentEq];
+  if (!eq) return;
+  const throws = flScores[eq.id] || [];
+  throws.pop();
+  flScores[eq.id] = throws;
+  majFlEcran();
+}
+function fl_prev() { if (flCurrentEq > 0) { flCurrentEq--; majFlEcran(); } }
+function fl_next() {
+  const eq = tirageParticipants[flCurrentEq];
+  if (!eq) return;
+  if (flCurrentEq < tirageParticipants.length - 1) {
+    flCurrentEq++;
+    majFlEcran();
+  } else {
+    // Tous saisis → classement
+    buildClassementFlechettes();
+  }
+}
+
+function buildClassementFlechettes() {
+  assignationClassement = tirageParticipants.map(p => ({
+    ...p,
+    score: (flScores[p.id] || []).reduce((s,t) => s+t.value, 0),
+    suddenDeath: null
+  })).sort((a,b) => b.score - a.score);
+  afficherAssignation();
+}
+
+// ===== PRÉCISION =====
+function demarrerPrecision() {
+  const c = state.concours;
+  if (!c) return;
+  const dist = parseFloat(document.getElementById('distance-cible').value) || 35;
+  const label = document.getElementById('dist-cible-label');
+  if (label) label.textContent = dist + ' m';
+  tirageParticipants = Object.entries(c.pecheurs || {})
+    .filter(([,p]) => p.poste)
+    .map(([id,p]) => ({id,...p}));
+  precisionScores = {};
+  tirageParticipants.forEach(p => { precisionScores[p.id] = [null, null]; });
+  renderPrecisionList();
+  showTirageStep(4);
+}
+
+function renderPrecisionList() {
+  const listEl = document.getElementById('precision-list');
+  if (!listEl) return;
+  listEl.innerHTML = tirageParticipants.map(p => {
+    const scores = precisionScores[p.id] || [null, null];
+    const best = scores.filter(s => s !== null).length > 0
+      ? Math.min(...scores.filter(s => s !== null))
+      : null;
+    const nom = p.nom2 ? p.nom + ' & ' + p.nom2 : p.nom + ' ' + p.prenom;
+    return '<div class="card" style="padding:12px;' + (best !== null ? 'border-left:3px solid var(--vert-moyen);' : '') + '">'
+      + '<div style="font-size:13px;font-weight:700;color:var(--texte);margin-bottom:8px;">' + nom + '</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'
+      + [0,1].map(i => {
+        const isBest = best !== null && scores[i] === best && scores.filter(s => s === best).length === 1;
+        return '<div>'
+          + '<label style="font-size:10px;font-weight:600;color:var(--gris-text);text-transform:uppercase;display:block;margin-bottom:4px;">Lancer ' + (i+1) + (isBest ? ' 🏆' : '') + '</label>'
+          + '<div style="display:flex;align-items:center;gap:4px;">'
+          + '<input type="number" step="0.01" min="0" placeholder="0.00" value="' + (scores[i] !== null ? scores[i] : '') + '" '
+          + 'oninput="updatePrecision(\'' + p.id + '\',' + i + ',this.value)" '
+          + 'style="flex:1;padding:8px;border:1px solid ' + (isBest ? 'var(--orange)' : 'var(--gris-border)') + ';border-radius:6px;font-size:16px;font-weight:700;text-align:center;background:' + (isBest ? 'var(--orange-clair)' : 'var(--gris-bg)') + ';font-family:var(--font-corps);">'
+          + '<span style="font-size:12px;color:var(--gris-text);">m</span></div></div>';
+      }).join('')
+      + '</div>'
+      + (best !== null ? '<div style="margin-top:8px;font-size:12px;font-weight:700;color:var(--vert-moyen);">Meilleur : ' + best.toFixed(2) + ' m</div>' : '')
+      + '</div>';
+  }).join('');
+  renderPrecisionClassement();
+}
+
+function updatePrecision(id, idx, val) {
+  const v = parseFloat(val);
+  if (!precisionScores[id]) precisionScores[id] = [null, null];
+  precisionScores[id][idx] = isNaN(v) ? null : v;
+  renderPrecisionList();
+}
+
+function renderPrecisionClassement() {
+  const classEl = document.getElementById('precision-classement');
+  if (!classEl) return;
+  const classes = tirageParticipants.map(p => {
+    const scores = precisionScores[p.id] || [];
+    const valides = scores.filter(s => s !== null);
+    const best = valides.length > 0 ? Math.min(...valides) : null;
+    const nom = p.nom2 ? p.nom + ' & ' + p.nom2 : p.nom + ' ' + p.prenom;
+    return { ...p, nom, best };
+  }).sort((a,b) => {
+    if (a.best === null && b.best === null) return 0;
+    if (a.best === null) return 1;
+    if (b.best === null) return -1;
+    return a.best - b.best;
+  });
+  const rCoul = (r) => r===1?'#F5A623':r===2?'#B0BEC5':r===3?'#CD7F32':'var(--gris-bg)';
+  classEl.innerHTML = classes.map((p,i) => {
+    const r = i+1;
+    return '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--gris-border);">'
+      + '<div style="width:26px;height:26px;border-radius:50%;background:' + rCoul(r) + ';display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:' + (r<=3?'#fff':'var(--gris-text)') + ';">' + r + '</div>'
+      + '<div style="flex:1;font-size:13px;font-weight:600;">' + p.nom + '</div>'
+      + '<div style="font-size:14px;font-weight:700;color:' + (p.best !== null ? 'var(--vert-moyen)' : 'var(--gris-text)') + ';">' + (p.best !== null ? p.best.toFixed(2) + ' m' : '—') + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+function validerPrecision() {
+  assignationClassement = tirageParticipants.map(p => {
+    const scores = precisionScores[p.id] || [];
+    const valides = scores.filter(s => s !== null);
+    const best = valides.length > 0 ? Math.min(...valides) : 9999;
+    return { ...p, score: best, type: 'precision' };
+  }).sort((a,b) => a.score - b.score);
+  afficherAssignation();
+}
+
+// ===== ASSIGNATION POSTES =====
+function afficherAssignation() {
+  const c = state.concours;
+  if (!c) return;
+  const cfg = FORMAT_CONFIG[c.type] || {};
+  const nbPostes = cfg.postes || 14;
+  const postesPris = Object.values(c.pecheurs || {}).filter(p => p.poste).map(p => p.poste);
+  const postesLibres = Array.from({length:nbPostes},(_,i)=>i+1).filter(n => !postesPris.includes(n));
+
+  const listEl = document.getElementById('assignation-list');
+  if (!listEl) return;
+
+  listEl.innerHTML = assignationClassement.map((p, i) => {
+    const r = i+1;
+    const rCoul = r===1?'#F5A623':r===2?'#B0BEC5':r===3?'#CD7F32':'var(--gris-bg)';
+    const rTxt = r<=3?'#fff':'var(--gris-text)';
+    const nom = p.nom2 ? p.nom + ' & ' + p.nom2 : p.nom + ' ' + p.prenom;
+    const scoreLabel = p.type === 'precision'
+      ? (p.score < 9999 ? p.score.toFixed(2) + ' m' : '—')
+      : p.score + ' pts' + (p.suddenDeath !== null ? ' (SD:' + p.suddenDeath + ')' : '');
+    const assigned = p._posteAssigne;
+    const options = postesLibres.filter(n => !Object.values(c.pecheurs || {}).find(x => x.poste === n && x._tirageTemp !== p.id))
+      .map(n => '<option value="' + n + '"' + (assigned===n?' selected':'') + '>Poste ' + n + (c.type==='carpo'&&c.jours===2?(n<=7?' (Rive A)':' (Rive B)'):'') + '</option>').join('');
+
+    return '<div class="card" style="padding:12px;display:flex;align-items:center;gap:10px;margin-bottom:0;' + (assigned ? 'border-left:3px solid var(--vert-moyen);' : '') + '">'
+      + '<div style="width:28px;height:28px;border-radius:50%;background:' + rCoul + ';display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:' + rTxt + ';flex-shrink:0;">' + r + '</div>'
+      + '<div style="flex:1;min-width:0;">'
+      + '<div style="font-size:13px;font-weight:700;color:var(--texte);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + nom + '</div>'
+      + '<div style="font-size:11px;color:var(--gris-text);">' + scoreLabel + '</div>'
+      + '</div>'
+      + '<select onchange="assignerPosteClassement(\'' + p.id + '\',this.value)" style="padding:6px 8px;border:1px solid var(--gris-border);border-radius:6px;font-size:12px;font-family:var(--font-corps);background:var(--gris-bg);">'
+      + '<option value="">—</option>' + options
+      + '</select>'
+      + '</div>';
+  }).join('');
+
+  showTirageStep(5);
+  majBtnValiderAssignation();
+}
+
+function assignerPosteClassement(id, poste) {
+  const p = assignationClassement.find(x => x.id === id);
+  if (p) p._posteAssigne = poste ? parseInt(poste) : null;
+  majBtnValiderAssignation();
+}
+
+function majBtnValiderAssignation() {
+  const assignes = assignationClassement.filter(p => p._posteAssigne).length;
+  const btn = document.getElementById('btn-valider-assignation');
+  const badge = document.getElementById('assignation-badge');
+  if (btn) btn.style.display = assignes > 0 ? 'flex' : 'none';
+  if (badge) badge.textContent = assignes + ' poste' + (assignes > 1 ? 's' : '') + ' assigné' + (assignes > 1 ? 's' : '');
+}
+
+function validerAssignation() {
+  const c = state.concours;
+  if (!c) return;
+  const updates = {};
+  assignationClassement.forEach(p => {
+    if (p._posteAssigne) updates['concours/' + c.id + '/pecheurs/' + p.id + '/poste'] = p._posteAssigne;
+  });
+  if (Object.keys(updates).length === 0) return;
+  showLoader(true);
+  db.ref().update(updates).then(() => {
+    showLoader(false);
+    showNotif('Postes assignés ✓', 'success');
+    setTimeout(() => ouvrirPesee(), 800);
+  }).catch(err => { showLoader(false); showNotif('Erreur : ' + err.message, 'error'); });
+}
+
+// ===== UTILITAIRE =====
+function shuffleArr(arr) {
+  let ci = arr.length, ri;
+  while (ci !== 0) { ri = Math.floor(Math.random() * ci); ci--; [arr[ci],arr[ri]] = [arr[ri],arr[ci]]; }
+  return arr;
+}
+
+// ===== MODULE RÉSULTATS =====
+
+let resJour = 0;  // 0 = total, 1 = J1, 2 = J2
+let resPeriode = 'general';
+let resListener = null;
+
+function majResultats() {
+  const c = state.concours;
+  if (!c) return;
+  const cfg = FORMAT_CONFIG[c.type] || {};
+
+  document.getElementById('res-titre').textContent = cfg.label || 'Classement';
+
+  // Onglets jours
+  const jourTabsEl = document.getElementById('res-jour-tabs');
+  jourTabsEl.style.display = (c.jours === 2) ? 'block' : 'none';
+  if (c.jours === 2 && resJour === 0) resJour = 0;
+
+  // Onglets périodes
+  const periodeTabsEl = document.getElementById('res-periode-tabs');
+  periodeTabsEl.style.display = (c.options && c.options.periodes) ? 'block' : 'none';
+
+  // Écoute Firebase
+  if (resListener) resListener();
+  const refP = db.ref('concours/' + c.id + '/pecheurs');
+  resListener = () => refP.off();
+  refP.on('value', snap => {
+    state.concours.pecheurs = snap.val() || {};
+    renderResultats();
+  });
+}
+
+function getPoidsResultat(pecheur) {
+  const c = state.concours;
+  let weights = pecheur.weights || [];
+  if (!Array.isArray(weights)) weights = Object.values(weights);
+  if (c.jours === 2 && resJour > 0) weights = weights.filter(w => (w.jour || 1) === resJour);
+  if (c.options && c.options.periodes && resPeriode !== 'general') {
+    weights = weights.filter(w => w.period === resPeriode);
+  }
+  return weights;
+}
+
+function renderResultats() {
+  const c = state.concours;
+  if (!c) return;
+  const pecheurs = Object.values(c.pecheurs || {}).filter(p => p.poste);
+  const cfg = FORMAT_CONFIG[c.type] || {};
+
+  // Calcul classement
+  const classe = pecheurs.map(p => {
+    const weights = getPoidsResultat(p);
+    const total = weights.reduce((s, w) => s + (w.poids || 0), 0);
+    const nbPoissons = weights.length;
+    return { ...p, total, nbPoissons, weights };
+  }).sort((a, b) => b.total - a.total);
+
+  // Rangs avec ex-aequo
+  const rangs = [];
+  classe.forEach((p, i) => {
+    if (i === 0) rangs.push(1);
+    else rangs.push(p.total.toFixed(3) === classe[i-1].total.toFixed(3) ? rangs[i-1] : i + 1);
+  });
+
+  // Stats
+  const totalPoids = classe.reduce((s, p) => s + p.total, 0);
+  const totalPoissons = classe.reduce((s, p) => s + p.nbPoissons, 0);
+
+  // Plus grosse prise (Commune ou Miroir)
+  let pgp = { poids: 0, nom: '', poste: 0, espece: '' };
+  pecheurs.forEach(p => {
+    const weights = getPoidsResultat(p);
+    weights.filter(w => !w.espece || w.espece === 'commune' || w.espece === 'miroir').forEach(w => {
+      if (w.poids > pgp.poids) pgp = { poids: w.poids, nom: p.nom + ' ' + p.prenom, poste: p.poste, espece: w.espece || 'Commune' };
+    });
+  });
+
+  // Prix prestige Enduro
+  let prestige = { koi: null, amour: null };
+  if (c.type === 'enduro') {
+    pecheurs.forEach(p => {
+      const weights = getPoidsResultat(p);
+      weights.filter(w => w.espece === 'koi').forEach(w => {
+        if (!prestige.koi || w.poids > prestige.koi.poids) prestige.koi = { poids: w.poids, nom: p.nom + ' ' + p.prenom };
+      });
+      weights.filter(w => w.espece === 'amour').forEach(w => {
+        if (!prestige.amour || w.poids > prestige.amour.poids) prestige.amour = { poids: w.poids, nom: p.nom + ' ' + p.prenom };
+      });
+    });
+  }
+
+  // Render stats
+  const statsEl = document.getElementById('res-stats');
+  statsEl.innerHTML =
+    '<div style="background:#1e3a8a;border-radius:10px;padding:10px;text-align:center;"><div style="font-size:16px;font-weight:700;color:#fff;">' + totalPoids.toFixed(3) + ' kg</div><div style="font-size:10px;color:rgba(255,255,255,0.6);text-transform:uppercase;">Poids total</div></div>' +
+    '<div style="background:var(--vert-moyen);border-radius:10px;padding:10px;text-align:center;"><div style="font-size:16px;font-weight:700;color:#fff;">' + totalPoissons + '</div><div style="font-size:10px;color:rgba(255,255,255,0.6);text-transform:uppercase;">Poissons</div></div>' +
+    '<div style="background:var(--orange);border-radius:10px;padding:10px;text-align:center;"><div style="font-size:16px;font-weight:700;color:#1a1a1a;">' + classe.length + '</div><div style="font-size:10px;color:rgba(26,26,26,0.6);text-transform:uppercase;">Pêcheurs</div></div>';
+
+  // Render PGP
+  const pgpEl = document.getElementById('res-pgp');
+  if (pgp.poids > 0 && c.prix && c.prix.pgp) {
+    pgpEl.style.display = 'block';
+    pgpEl.innerHTML = '<div style="background:var(--gris-card);border:1.5px solid var(--orange);border-radius:var(--radius);padding:12px 14px;display:flex;align-items:center;gap:10px;">'
+      + '<span style="font-size:24px;">🐟</span>'
+      + '<div style="flex:1;"><div style="font-size:10px;font-weight:600;color:var(--gris-text);text-transform:uppercase;letter-spacing:0.5px;">Plus grosse prise</div>'
+      + '<div style="font-size:14px;font-weight:700;color:var(--texte);">' + pgp.nom + ' · Poste ' + pgp.poste + '</div>'
+      + '<div style="font-size:11px;color:var(--gris-text);">' + pgp.espece.charAt(0).toUpperCase() + pgp.espece.slice(1) + '</div></div>'
+      + '<span style="font-size:22px;font-weight:700;color:var(--orange);">' + pgp.poids.toFixed(3) + ' kg</span></div>';
+  } else {
+    pgpEl.style.display = 'none';
+  }
+
+  // Render Prestige Enduro
+  const prestEl = document.getElementById('res-prestige');
+  if (c.type === 'enduro' && (prestige.koi || prestige.amour)) {
+    prestEl.style.display = 'block';
+    let html = '<div style="display:flex;flex-direction:column;gap:8px;">';
+    if (prestige.koi) {
+      html += '<div style="background:var(--gris-card);border:1.5px solid #9c27b0;border-radius:var(--radius);padding:12px 14px;display:flex;align-items:center;gap:10px;">'
+        + '<span style="font-size:22px;">🏆</span><div style="flex:1;"><div style="font-size:10px;font-weight:600;color:#9c27b0;text-transform:uppercase;">Poisson Prestige — Koï</div><div style="font-size:14px;font-weight:700;">' + prestige.koi.nom + '</div></div>'
+        + '<span style="font-size:20px;font-weight:700;color:#9c27b0;">' + prestige.koi.poids.toFixed(3) + ' kg</span></div>';
+    }
+    if (prestige.amour) {
+      html += '<div style="background:var(--gris-card);border:1.5px solid #e91e63;border-radius:var(--radius);padding:12px 14px;display:flex;align-items:center;gap:10px;">'
+        + '<span style="font-size:22px;">🏅</span><div style="flex:1;"><div style="font-size:10px;font-weight:600;color:#e91e63;text-transform:uppercase;">Poisson Prestige — Amour Blanc</div><div style="font-size:14px;font-weight:700;">' + prestige.amour.nom + '</div></div>'
+        + '<span style="font-size:20px;font-weight:700;color:#e91e63;">' + prestige.amour.poids.toFixed(3) + ' kg</span></div>';
+    }
+    html += '</div>';
+    prestEl.innerHTML = html;
+  } else {
+    prestEl.style.display = 'none';
+  }
+
+  // Render Podium top 3
+  const podiumEl = document.getElementById('res-podium');
+  const top3 = classe.slice(0, 3);
+  const medailles = ['🥇','🥈','🥉'];
+  const barres = [55, 40, 28];
+  const couleurs = ['#F5A623','#B0BEC5','#CD7F32'];
+  const ordre = top3.length >= 2 ? [1,0,2] : [0];
+  podiumEl.innerHTML = ordre.filter(i => top3[i]).map(i => {
+    const p = top3[i];
+    const nom = c.mode === 'americaine' && p.nom2 ? p.nom + ' & ' + p.nom2 : p.nom + ' ' + p.prenom;
+    return '<div style="flex:1;text-align:center;">'
+      + '<div style="font-size:' + (i===0?'20px':'18px') + ';margin-bottom:4px;">' + medailles[i] + '</div>'
+      + '<div style="font-size:11px;font-weight:600;color:var(--texte);margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + nom + '</div>'
+      + '<div style="font-size:10px;color:var(--gris-text);">Poste ' + p.poste + '</div>'
+      + '<div style="font-size:12px;font-weight:700;color:var(--texte);margin-bottom:4px;">' + p.total.toFixed(3) + ' kg</div>'
+      + '<div style="height:' + barres[i] + 'px;background:' + couleurs[i] + ';border-radius:5px 5px 0 0;"></div>'
+      + '</div>';
+  }).join('');
+
+  // Render tableau
+  const tableauEl = document.getElementById('res-tableau');
+  const rCoul = (r) => r===1?'#F5A623':r===2?'#B0BEC5':r===3?'#CD7F32':'var(--gris-bg)';
+  const rTxt = (r) => r<=3?'#fff':'var(--gris-text)';
+  const head = '<div style="background:#1e3a8a;display:grid;grid-template-columns:36px 28px 1fr 44px 60px;gap:0;padding:8px 10px;">'
+    + ['Rg','Pst','Nom','🐟','Total'].map(t => '<span style="font-size:9px;font-weight:600;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:0.5px;">' + t + '</span>').join('')
+    + '</div>';
+  const rows = classe.map((p, i) => {
+    const r = rangs[i];
+    const bg = r===1?'#fffbf0':r===2?'#f8f8f8':r===3?'#fdf6ee':'transparent';
+    const nom = c.mode === 'americaine' && p.nom2 ? p.nom + ' & ' + p.nom2 : p.nom + ' ' + p.prenom;
+    return '<div style="background:' + bg + ';display:grid;grid-template-columns:36px 28px 1fr 44px 60px;gap:0;padding:9px 10px;border-bottom:1px solid var(--gris-border);align-items:center;">'
+      + '<div><div style="width:26px;height:26px;border-radius:6px;background:' + rCoul(r) + ';display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:' + rTxt(r) + ';">' + r + '</div></div>'
+      + '<span style="font-size:13px;font-weight:700;color:var(--bleu);">' + p.poste + '</span>'
+      + '<span style="font-size:12px;font-weight:600;color:var(--texte);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + nom + '</span>'
+      + '<span style="font-size:11px;color:var(--vert-moyen);font-weight:600;text-align:center;">' + p.nbPoissons + '</span>'
+      + '<span style="font-size:13px;font-weight:700;color:#1e3a8a;text-align:right;">' + p.total.toFixed(3) + '</span>'
+      + '</div>';
+  }).join('');
+  tableauEl.innerHTML = head + rows;
+}
+
+function setResJour(jour) {
+  resJour = jour;
+  ['j1','j2','total'].forEach(id => {
+    const el = document.getElementById('res-tab-' + id);
+    if (!el) return;
+    const actif = (id === 'j1' && jour === 1) || (id === 'j2' && jour === 2) || (id === 'total' && jour === 0);
+    el.style.background = actif ? 'var(--bleu)' : 'var(--gris-card)';
+    el.style.color = actif ? '#fff' : 'var(--gris-text)';
+  });
+  renderResultats();
+}
+
+function setResPeriode(periode) {
+  resPeriode = periode;
+  ['matin','apres','gen'].forEach(id => {
+    const el = document.getElementById('res-tab-' + id);
+    if (!el) return;
+    const periodeMap = { matin:'matin', apres:'apres-midi', gen:'general' };
+    const actif = periodeMap[id] === periode;
+    el.style.background = actif ? 'var(--vert-moyen)' : 'var(--gris-card)';
+    el.style.color = actif ? '#fff' : 'var(--gris-text)';
+  });
+  renderResultats();
+}
+
+function imprimerResultats() {
+  const c = state.concours;
+  if (!c) return;
+  const cfg = FORMAT_CONFIG[c.type] || {};
+  const tableau = document.getElementById('res-tableau').outerHTML;
+  const pgp = document.getElementById('res-pgp').outerHTML;
+  const prestige = document.getElementById('res-prestige').outerHTML;
+  const w = window.open('', '_blank');
+  w.document.write('<html><head><title>Résultats ' + (cfg.label || '') + '</title>'
+    + '<style>body{font-family:Outfit,sans-serif;padding:20px;color:#111;} @media print{.no-print{display:none}}</style></head><body>'
+    + '<h2 style="color:#1e3a8a;font-size:22px;margin-bottom:4px;">' + (c.titre || 'Concours') + '</h2>'
+    + '<p style="color:#666;font-size:13px;margin-bottom:16px;">' + (c.dateJ1 || '') + ' · ' + (cfg.label || '') + '</p>'
+    + pgp + prestige + tableau
+    + '<script>window.onload=()=>window.print()<\/script></body></html>');
+  w.document.close();
+}
+
+// ===== UTILITAIRES =====
+function showLoader(show) {
+  document.getElementById('loader').className = 'loader-overlay' + (show ? ' show' : '');
+}
+
+let notifTimer;
+function showNotif(msg, type) {
+  const el = document.getElementById('notif');
+  el.textContent = msg;
+  el.className = 'notif show' + (type ? ' ' + type : '');
+  clearTimeout(notifTimer);
+  notifTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ===== INITIALISATION =====
+document.addEventListener('DOMContentLoaded', () => {
+  chargerDernierConcours();
+  // Date J1 par défaut = aujourd'hui
+  document.getElementById('p-date1').value = new Date().toISOString().split('T')[0];
+  // Date2 masquée par défaut
+  document.getElementById('date2-container').style.display = 'none';
+});
+</script>
+</body>
+</html>
