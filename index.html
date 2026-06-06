@@ -10,7 +10,7 @@
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
 <style>
 :root {
@@ -1302,11 +1302,10 @@ const firebaseConfig = {
   apiKey: "AIzaSyB44m6DoeyQSNMctS0hKLpaPR5vNOTNsw0",
   authDomain: "concours-peche.firebaseapp.com",
   projectId: "concours-peche",
-  appId: "1:376446532224:web:4f9c1ffd2f4fe3ef450465",
-  databaseURL: "https://concours-peche-default-rtdb.europe-west1.firebasedatabase.app"
+  appId: "1:376446532224:web:4f9c1ffd2f4fe3ef450465"
 };
 firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+const db = firebase.firestore();
 
 // ===== ÉTAT GLOBAL =====
 const state = {
@@ -1382,19 +1381,22 @@ function naviguer(page) {
 
 // ===== ACCUEIL : DERNIER CONCOURS =====
 function chargerDernierConcours() {
-  db.ref('concours').orderByChild('timestamp').limitToLast(1).once('value').then(snap => {
-    if (!snap.exists()) return;
-    snap.forEach(child => {
-      const d = child.val();
-      if (!d || d.statut === 'termine') return;
-      const card = document.getElementById('last-card');
-      const cfg = FORMAT_CONFIG[d.type] || {};
-      document.getElementById('last-icon').textContent = cfg.icon || '🎣';
-      document.getElementById('last-titre').textContent = d.titre || 'Concours';
-      document.getElementById('last-meta').textContent = (d.dateJ1 || '') + ' · ' + (cfg.label || '') + (d.jours === 2 ? ' · 2 jours' : '');
-      card.style.display = 'flex';
-      state.concours = { id: child.key, ...d };
-    });
+  db.collection('concours')
+    .where('statut', '!=', 'termine')
+    .orderBy('statut')
+    .orderBy('timestamp', 'desc')
+    .limit(1)
+    .get().then(snap => {
+    if (snap.empty) return;
+    const doc = snap.docs[0];
+    const d = doc.data();
+    const card = document.getElementById('last-card');
+    const cfg = FORMAT_CONFIG[d.type] || {};
+    document.getElementById('last-icon').textContent = cfg.icon || '🎣';
+    document.getElementById('last-titre').textContent = d.titre || 'Concours';
+    document.getElementById('last-meta').textContent = (d.dateJ1 || '') + ' · ' + (cfg.label || '') + (d.jours === 2 ? ' · 2 jours' : '');
+    card.style.display = 'flex';
+    state.concours = { id: doc.id, ...d };
   }).catch(() => {});
 }
 
@@ -1580,9 +1582,8 @@ function lancerConcours() {
     pecheurs: {}
   };
 
-  const ref = db.ref('concours').push();
-  ref.set(concours).then(() => {
-    state.concours = { id: ref.key, ...concours };
+  db.collection('concours').add(concours).then(ref => {
+    state.concours = { id: ref.id, ...concours };
     state.role = 'admin';
     showLoader(false);
     showNotif('Concours créé ! ✓', 'success');
@@ -1668,10 +1669,11 @@ function ouvrirPesee() {
   jourPesee = 1;
   document.getElementById('espece-field').style.display = c.type === 'enduro' ? 'block' : 'none';
   if (peseeListener) peseeListener();
-  const refPecheurs = db.ref('concours/' + c.id + '/pecheurs');
-  peseeListener = () => refPecheurs.off();
-  refPecheurs.on('value', snap => {
-    state.concours.pecheurs = snap.val() || {};
+  const refPecheurs = db.collection('concours').doc(c.id).collection('pecheurs');
+  peseeListener = refPecheurs.onSnapshot(snap => {
+    const data = {};
+    snap.forEach(doc => { data[doc.id] = doc.data(); });
+    state.concours.pecheurs = data;
     majGrillePostes();
     majStatsPesee();
     if (posteActif) majPanelSaisie(posteActif);
@@ -1679,11 +1681,12 @@ function ouvrirPesee() {
 
   // Écouter les verrous en temps réel
   if (state.verrouListener) state.verrouListener();
-  const refVerrous = db.ref('concours/' + c.id + '/verrous');
-  state.verrouListener = () => refVerrous.off();
-  refVerrous.on('value', snap => {
-    state.verrous = snap.val() || {};
-    majGrillePostes(); // Mettre à jour l'affichage des verrous
+  const refVerrous = db.collection('concours').doc(c.id).collection('verrous');
+  state.verrouListener = refVerrous.onSnapshot(snap => {
+    const data = {};
+    snap.forEach(doc => { data[doc.id] = doc.data(); });
+    state.verrous = data;
+    majGrillePostes();
   });
 
   // ID unique de cet opérateur pour la session
@@ -1775,14 +1778,14 @@ function ouvrirPoste(numPoste) {
   posteActif = numPoste;
 
   // Poser le verrou sur Firebase
-  const refVerrou = db.ref('concours/' + c.id + '/verrous/' + numPoste);
+  const refVerrou = db.collection('concours').doc(c.id).collection('verrous').doc(String(numPoste));
   refVerrou.set({ operateur: state.operateurId, ts: Date.now() });
 
   // Renouveler le verrou toutes les 15s tant que le panel est ouvert
   clearInterval(state.verrouInterval);
   state.verrouInterval = setInterval(() => {
     if (posteActif === numPoste) {
-      refVerrou.set({ operateur: state.operateurId, ts: Date.now() });
+      db.collection('concours').doc(c.id).collection('verrous').doc(String(numPoste)).set({ operateur: state.operateurId, ts: Date.now() });
     } else {
       clearInterval(state.verrouInterval);
     }
@@ -1809,11 +1812,10 @@ function fermerPanel() {
 function libererVerrou(numPoste) {
   const c = state.concours;
   if (!c || !numPoste) return;
-  const refVerrou = db.ref('concours/' + c.id + '/verrous/' + numPoste);
-  refVerrou.once('value').then(snap => {
-    const v = snap.val();
-    // Ne libérer que si c'est notre propre verrou
-    if (v && v.operateur === state.operateurId) refVerrou.remove();
+  const refVerrou = db.collection('concours').doc(c.id).collection('verrous').doc(String(numPoste));
+  refVerrou.get().then(snap => {
+    const v = snap.data();
+    if (v && v.operateur === state.operateurId) refVerrou.delete();
   });
 }
 
@@ -1865,21 +1867,19 @@ function ajouterPoisson() {
   if (espece) newWeight.espece = espece;
 
   showLoader(true);
-  const refW = db.ref('concours/' + c.id + '/pecheurs/' + pecId + '/weights');
+  const refPec = db.collection('concours').doc(c.id).collection('pecheurs').doc(pecId);
 
-  // TRANSACTION ATOMIQUE — impossible d'écraser une saisie simultanée
-  refW.transaction(currentData => {
-    const arr = Array.isArray(currentData) ? [...currentData]
-      : currentData ? Object.values(currentData)
-      : [];
-    arr.push(newWeight);
-    return arr;
-  }).then(result => {
+  // TRANSACTION ATOMIQUE Firestore — impossible d'écraser une saisie simultanée
+  db.runTransaction(tx => {
+    return tx.get(refPec).then(doc => {
+      if (!doc.exists) throw new Error('Pêcheur introuvable');
+      const data = doc.data();
+      const arr = Array.isArray(data.weights) ? [...data.weights] : [];
+      arr.push(newWeight);
+      tx.update(refPec, { weights: arr });
+    });
+  }).then(() => {
     showLoader(false);
-    if (!result.committed) {
-      showNotif('Conflit détecté, réessayez', 'error');
-      return;
-    }
     document.getElementById('saisie-poids').value = '';
     document.getElementById('saisie-poids').focus();
     showNotif('✓ ' + poidsVal.toFixed(3) + ' kg ajouté', 'success');
@@ -1891,22 +1891,20 @@ function supprimerPoisson(pecId, idx) {
   if (!c) return;
   if (!confirm('Supprimer cette capture ?')) return;
   showLoader(true);
-  const refW = db.ref('concours/' + c.id + '/pecheurs/' + pecId + '/weights');
+  const refPec = db.collection('concours').doc(c.id).collection('pecheurs').doc(pecId);
 
-  // TRANSACTION ATOMIQUE — suppression sécurisée par index
-  refW.transaction(currentData => {
-    const arr = Array.isArray(currentData) ? [...currentData]
-      : currentData ? Object.values(currentData)
-      : [];
-    if (idx < 0 || idx >= arr.length) return currentData; // Index invalide → abandon
-    arr.splice(idx, 1);
-    return arr;
-  }).then(result => {
+  // TRANSACTION ATOMIQUE Firestore — suppression sécurisée
+  db.runTransaction(tx => {
+    return tx.get(refPec).then(doc => {
+      if (!doc.exists) throw new Error('Pêcheur introuvable');
+      const data = doc.data();
+      const arr = Array.isArray(data.weights) ? [...data.weights] : [];
+      if (idx < 0 || idx >= arr.length) throw new Error('Index invalide');
+      arr.splice(idx, 1);
+      tx.update(refPec, { weights: arr });
+    });
+  }).then(() => {
     showLoader(false);
-    if (!result.committed) {
-      showNotif('Conflit détecté, réessayez', 'error');
-      return;
-    }
     showNotif('Capture supprimée', 'ok');
   }).catch(err => { showLoader(false); showNotif('Erreur : ' + err.message, 'error'); });
 }
@@ -1989,10 +1987,10 @@ function ouvrirInscription() {
 
   // Écoute Firebase en temps réel
   if (inscriptionListener) inscriptionListener();
-  const refPecheurs = db.ref(`concours/${c.id}/pecheurs`);
-  inscriptionListener = () => refPecheurs.off();
-  refPecheurs.on('value', snap => {
-    const data = snap.val() || {};
+  const refPecheurs = db.collection('concours').doc(c.id).collection('pecheurs');
+  inscriptionListener = refPecheurs.onSnapshot(snap => {
+    const data = {};
+    snap.forEach(doc => { data[doc.id] = doc.data(); });
     state.concours.pecheurs = data;
     majListeInscription();
     majSelectPoste();
@@ -2053,10 +2051,8 @@ function inscrirePecheur() {
   }
 
   showLoader(true);
-  const refPecheurs = db.ref(`concours/${c.id}/pecheurs`);
-  const newRef = refPecheurs.push();
-  newRef.set(pecheur).then(() => {
-    lastAdded = { id: newRef.key, ...pecheur };
+  db.collection('concours').doc(c.id).collection('pecheurs').add(pecheur).then(ref => {
+    lastAdded = { id: ref.id, ...pecheur };
     showLoader(false);
     showNotif('✓ ' + nom + (ame ? ' & ' + (pecheur.nom2 || '') : '') + ' inscrit', 'success');
 
@@ -2083,7 +2079,7 @@ function inscrirePecheur() {
 function annulerDerniereInscription() {
   if (!lastAdded || !state.concours) return;
   showLoader(true);
-  db.ref(`concours/${state.concours.id}/pecheurs/${lastAdded.id}`).remove().then(() => {
+  db.collection('concours').doc(state.concours.id).collection('pecheurs').doc(lastAdded.id).delete().then(() => {
     showLoader(false);
     showNotif('Inscription annulée', 'ok');
     lastAdded = null;
@@ -2099,7 +2095,7 @@ function supprimerPecheur(id) {
   if (!state.concours) return;
   if (!confirm('Supprimer ce pêcheur ?')) return;
   showLoader(true);
-  db.ref(`concours/${state.concours.id}/pecheurs/${id}`).remove().then(() => {
+  db.collection('concours').doc(state.concours.id).collection('pecheurs').doc(id).delete().then(() => {
     showLoader(false);
     showNotif('Pêcheur supprimé', 'ok');
   }).catch(err => {
@@ -2234,7 +2230,7 @@ function confirmerAssignation(id, btn) {
   if (!poste) { showNotif('Choisissez un poste', 'error'); return; }
   if (!state.concours) return;
   showLoader(true);
-  db.ref(`concours/${state.concours.id}/pecheurs/${id}/poste`).set(parseInt(poste)).then(() => {
+  db.collection('concours').doc(state.concours.id).collection('pecheurs').doc(id).update({ poste: parseInt(poste) }).then(() => {
     showLoader(false);
     showNotif(`✓ Poste ${poste} assigné`, 'success');
     if (modal) modal.remove();
@@ -2246,7 +2242,7 @@ function confirmerAssignation(id, btn) {
 
 function lancerPesee() {
   if (!state.concours) return;
-  db.ref('concours/' + state.concours.id + '/statut').set('pesee').then(() => {
+  db.collection('concours').doc(state.concours.id).update({ statut: 'pesee' }).then(() => {
     showNotif('Pesée lancée ! ✓', 'success');
     ouvrirPesee();
   });
@@ -2840,7 +2836,18 @@ function validerAssignation() {
   });
   if (Object.keys(updates).length === 0) return;
   showLoader(true);
-  db.ref().update(updates).then(() => {
+  // Convertir les updates Firebase RTD en batch Firestore
+  const batch = db.batch();
+  Object.entries(updates).forEach(([path, value]) => {
+    // path = 'concours/ID/pecheurs/PECID/poste'
+    const parts = path.split('/');
+    const concoursId = parts[1];
+    const pecId = parts[3];
+    const field = parts[4];
+    const ref = db.collection('concours').doc(concoursId).collection('pecheurs').doc(pecId);
+    batch.update(ref, { [field]: value });
+  });
+  batch.commit().then(() => {
     showLoader(false);
     showNotif('Postes assignés ✓', 'success');
     setTimeout(() => ouvrirPesee(), 800);
@@ -2878,10 +2885,11 @@ function majResultats() {
 
   // Écoute Firebase
   if (resListener) resListener();
-  const refP = db.ref('concours/' + c.id + '/pecheurs');
-  resListener = () => refP.off();
-  refP.on('value', snap => {
-    state.concours.pecheurs = snap.val() || {};
+  const refP = db.collection('concours').doc(c.id).collection('pecheurs');
+  resListener = refP.onSnapshot(snap => {
+    const data = {};
+    snap.forEach(doc => { data[doc.id] = doc.data(); });
+    state.concours.pecheurs = data;
     renderResultats();
   });
 }
