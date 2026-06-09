@@ -889,33 +889,39 @@ body {
         <button class="btn-back" onclick="naviguer('parametrage')">←</button>
         <div class="header-info">
           <div class="header-titre" id="insc-titre">Inscriptions</div>
-          <div class="header-sub" id="insc-sub">Enregistrement des pêcheurs</div>
+          <div class="header-sub" id="insc-sub">Saisie des pêcheurs</div>
         </div>
         <div class="header-icon" id="insc-icon">📋</div>
       </div>
     </div>
-
     <div class="page-body">
 
-      <!-- Formulaire inscription -->
-      <p class="section-label">Nouveau pêcheur</p>
-      <div class="card" id="form-inscription">
+      <!-- Compteur + cap -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <p class="section-label" style="margin:0;">Pêcheurs inscrits</p>
+        <span id="insc-compteur" style="font-size:13px;font-weight:700;color:var(--vert-moyen);">0 / 0</span>
+      </div>
 
-        <!-- Pêcheur 1 -->
+      <!-- Alerte cap atteint -->
+      <div id="cap-alert" style="display:none;" class="info-box" style="background:var(--rouge-clair);color:var(--rouge);border:1px solid var(--rouge);margin-bottom:12px;">
+        ⚠️ Nombre maximum de pêcheurs atteint
+      </div>
+
+      <!-- Formulaire inscription -->
+      <div class="card" id="form-inscription" style="margin-bottom:12px;">
         <div class="field-2col">
           <div>
             <label class="field-label" id="label-nom1">NOM</label>
-            <input type="text" class="field-input" id="in-nom" placeholder="DUPONT" style="text-transform:uppercase;">
+            <input type="text" class="field-input" id="in-nom" placeholder="DUPONT" style="text-transform:uppercase;" onkeydown="if(event.key==='Enter')document.getElementById('in-prenom').focus()">
           </div>
           <div>
             <label class="field-label" id="label-prenom1">Prénom</label>
-            <input type="text" class="field-input" id="in-prenom" placeholder="Pierre">
+            <input type="text" class="field-input" id="in-prenom" placeholder="Pierre" onkeydown="if(event.key==='Enter')inscrirePecheur()">
           </div>
         </div>
-
-        <!-- Pêcheur 2 (américaine) -->
+        <!-- Pêcheur 2 mode américaine -->
         <div id="pecheur2-fields" style="display:none;">
-          <div class="info-box green" style="margin-bottom:10px;">👥 Mode Américaine — saisissez le 2ème pêcheur</div>
+          <div class="info-box green" style="margin:8px 0;">👥 Américaine — 2ème pêcheur du binôme</div>
           <div class="field-2col">
             <div>
               <label class="field-label">NOM Pêcheur 2</label>
@@ -923,62 +929,37 @@ body {
             </div>
             <div>
               <label class="field-label">Prénom Pêcheur 2</label>
-              <input type="text" class="field-input" id="in-prenom2" placeholder="Jean">
+              <input type="text" class="field-input" id="in-prenom2" placeholder="Jean" onkeydown="if(event.key==='Enter')inscrirePecheur()">
             </div>
           </div>
         </div>
-
-        <!-- Sélection poste -->
-        <div class="field-row" style="margin-top:4px;">
-          <label class="field-label">🎯 Attribution du poste</label>
-          <select class="field-input" id="in-poste">
-            <option value="">— En attente de tirage —</option>
-          </select>
-        </div>
-
-        <!-- Rive info (Carpodrome 2j) -->
-        <div class="info-box blue" id="rive-insc-info" style="display:none; margin-top:4px;">
-          ℹ️ Rive A : postes 1→7 · Rive B : postes 8→14
-        </div>
-
-        <!-- Boutons -->
-        <div style="display:flex; gap:8px; margin-top:12px;">
-          <button class="btn-lancer" style="margin-top:0; flex:1;" id="btn-inscrire" onclick="inscrirePecheur()">
-            ✓ Inscrire
+        <div style="display:flex;gap:8px;margin-top:12px;">
+          <button class="btn-lancer" style="margin-top:0;flex:1;" id="btn-inscrire" onclick="inscrirePecheur()">
+            ✚ Inscrire
           </button>
           <button id="btn-annuler-insc" onclick="annulerDerniereInscription()"
-            style="display:none; padding:12px 16px; background:var(--orange-clair); color:#BA7517; border:1px solid var(--orange); border-radius:var(--radius); font-size:13px; font-weight:600; font-family:var(--font-corps); cursor:pointer;">
+            style="display:none;padding:12px 16px;background:var(--orange-clair);color:#BA7517;border:1px solid var(--orange);border-radius:var(--radius);font-size:13px;font-weight:600;font-family:var(--font-corps);cursor:pointer;">
             ↩ Annuler
           </button>
         </div>
-
-        <!-- Dernière inscription -->
-        <div id="last-insc-info" style="display:none; margin-top:10px;" class="info-box orange">
+        <div id="last-insc-info" style="display:none;margin-top:10px;" class="info-box orange">
           <span id="last-insc-text"></span>
         </div>
-
       </div>
 
-      <!-- Compteur postes -->
-      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-        <p class="section-label" style="margin:0;">Postes assignés</p>
-        <span id="insc-compteur" style="font-size:12px; font-weight:600; color:var(--vert-moyen);">0 / 0</span>
+      <!-- Liste inscrits -->
+      <div id="liste-inscrits"></div>
+
+      <!-- Boutons actions -->
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:16px;">
+        <button class="btn-lancer" id="btn-valider-inscriptions" onclick="validerInscriptions()" style="display:none;">
+          ✓ Valider les inscriptions et procéder au tirage
+          <span class="lbadge" id="badge-nb-inscrits">0</span>
+        </button>
+        <button class="btn-lancer" id="btn-lancer-pesee" onclick="lancerPesee()" style="display:none;background:linear-gradient(135deg,#1e3a8a,var(--bleu));">
+          ▶ Lancer la pesée directement (sans tirage)
+        </button>
       </div>
-
-      <!-- Liste postes assignés -->
-      <div id="liste-assignes"></div>
-
-      <!-- Liste en attente -->
-      <div id="attente-header" style="display:none; margin-top:12px;">
-        <p class="section-label">En attente de poste</p>
-      </div>
-      <div id="liste-attente"></div>
-
-      <!-- Bouton lancer pesée -->
-      <button class="btn-lancer" id="btn-lancer-pesee" onclick="lancerPesee()" style="margin-top:16px; display:none;">
-        ▶ Lancer la pesée
-        <span class="lbadge" id="pesee-badge">0 pêcheurs</span>
-      </button>
 
     </div>
   </div><!-- fin page-inscription -->
@@ -1138,7 +1119,7 @@ body {
     </div>
     <div class="page-body">
 
-      <!-- ÉTAPE 1 : Choix du mode -->
+      <!-- ÉTAPE 1 : Choix du mode (Enduro uniquement, sinon boules direct) -->
       <div id="tirage-step1">
         <p class="section-label">Mode de tirage</p>
         <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
@@ -1146,67 +1127,80 @@ body {
             <div style="width:44px;height:44px;border-radius:var(--radius-sm);background:var(--vert-clair);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🎱</div>
             <div style="flex:1;">
               <div style="font-size:14px;font-weight:700;color:var(--vert-moyen);">Tirage boules</div>
-              <div style="font-size:12px;color:var(--gris-text);">Animation aléatoire · carte à retourner</div>
+              <div style="font-size:12px;color:var(--gris-text);">Nom tiré au sort → pêcheur retourne une carte</div>
             </div>
             <div id="radio-boules" style="width:20px;height:20px;border-radius:50%;background:var(--vert-moyen);border:2px solid var(--vert-moyen);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><div style="width:8px;height:8px;border-radius:50%;background:#fff;"></div></div>
           </div>
-          <div onclick="selectModeTirage('flechettes')" id="mode-flechettes" style="background:var(--gris-card);border:1px solid var(--gris-border);border-radius:var(--radius);padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer;">
+          <div onclick="selectModeTirage('flechettes')" id="mode-flechettes" style="display:none;background:var(--gris-card);border:1px solid var(--gris-border);border-radius:var(--radius);padding:14px;align-items:center;gap:12px;cursor:pointer;">
             <div style="width:44px;height:44px;border-radius:var(--radius-sm);background:var(--bleu-clair);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🎯</div>
             <div style="flex:1;">
               <div style="font-size:14px;font-weight:700;color:var(--texte);">Fléchettes</div>
-              <div style="font-size:12px;color:var(--gris-text);">2×3 fléchettes · sudden death si égalité</div>
+              <div style="font-size:12px;color:var(--gris-text);">3 fléchettes/pers. → 6/équipe · sudden death si égalité</div>
             </div>
             <div id="radio-flechettes" style="width:20px;height:20px;border-radius:50%;border:2px solid var(--gris-border);flex-shrink:0;"></div>
           </div>
-          <div onclick="selectModeTirage('precision')" id="mode-precision" style="background:var(--gris-card);border:1px solid var(--gris-border);border-radius:var(--radius);padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer;">
+          <div onclick="selectModeTirage('precision')" id="mode-precision" style="display:none;background:var(--gris-card);border:1px solid var(--gris-border);border-radius:var(--radius);padding:14px;align-items:center;gap:12px;cursor:pointer;">
             <div style="width:44px;height:44px;border-radius:var(--radius-sm);background:var(--orange-clair);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🎣</div>
             <div style="flex:1;">
               <div style="font-size:14px;font-weight:700;color:var(--texte);">Tir de précision</div>
-              <div style="font-size:12px;color:var(--gris-text);">Distance au point cible en m/cm</div>
+              <div style="font-size:12px;color:var(--gris-text);">Distance au point cible · plus proche = 1er choix</div>
             </div>
             <div id="radio-precision" style="width:20px;height:20px;border-radius:50%;border:2px solid var(--gris-border);flex-shrink:0;"></div>
           </div>
         </div>
-        <!-- Distance cible (précision) -->
-        <div id="distance-config" style="display:none;">
-          <div class="card" style="margin-bottom:12px;">
+        <div id="distance-config" style="display:none;margin-bottom:12px;">
+          <div class="card">
             <label class="field-label">🎯 Distance cible (mètres)</label>
             <input type="number" class="field-input" id="distance-cible" value="35" step="0.5" min="1" style="font-size:18px;font-weight:700;text-align:center;">
           </div>
         </div>
         <button class="btn-lancer" onclick="demarrerTirage()">
-          ▶ Démarrer le tirage
+          ▶ Démarrer
           <span class="lbadge" id="tirage-mode-badge">Boules</span>
         </button>
       </div>
 
-      <!-- ÉTAPE 2 : Machine à boules -->
+      <!-- ÉTAPE 2 : Tirage boules — nom tiré + cartes -->
       <div id="tirage-step2" style="display:none;">
-        <div style="text-align:center;margin-bottom:16px;">
-          <!-- Machine loto -->
-          <div id="loto-machine" style="width:150px;height:150px;border:8px solid rgba(26,74,46,0.8);border-radius:50%;margin:0 auto 16px;position:relative;background:radial-gradient(circle,#fff 0%,#ecf0f1 100%);overflow:hidden;box-shadow:inset 0 0 20px rgba(0,0,0,0.2);"></div>
-          <div id="drawn-name" style="font-size:18px;font-weight:700;color:var(--vert-fonce);margin-bottom:12px;min-height:50px;line-height:1.4;">Cliquez sur Lancer...</div>
-          <button id="btn-lancer-tirage" onclick="lancerTirageBoules()" class="btn-lancer" style="margin-top:0;margin-bottom:16px;">
-            🎱 Lancer le tirage
-          </button>
-          <div id="instruction-cartes" style="display:none;font-size:12px;color:var(--gris-text);margin-bottom:10px;">👆 Retournez une carte pour choisir le poste</div>
+
+        <!-- Nom en cours -->
+        <div class="card" style="text-align:center;margin-bottom:14px;padding:20px;">
+          <div style="font-size:12px;font-weight:600;color:var(--gris-text);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">C'est au tour de</div>
+          <div id="drawn-name" style="font-size:22px;font-weight:700;color:var(--vert-fonce);min-height:34px;line-height:1.3;">En attente...</div>
+          <div id="drawn-info" style="font-size:12px;color:var(--gris-text);margin-top:4px;"></div>
         </div>
 
-        <!-- Info rive Carpo 2j -->
-        <div id="rive-tirage-info" style="display:none;" class="info-box blue" style="margin-bottom:12px;"></div>
+        <!-- Machine loto + bouton -->
+        <div style="text-align:center;margin-bottom:16px;">
+          <div id="loto-machine" style="width:140px;height:140px;border:8px solid rgba(26,74,46,0.8);border-radius:50%;margin:0 auto 14px;position:relative;background:radial-gradient(circle,#fff 0%,#ecf0f1 100%);overflow:hidden;box-shadow:inset 0 0 20px rgba(0,0,0,0.2);"></div>
+          <button id="btn-lancer-tirage" onclick="lancerTirageBoules()" class="btn-lancer" style="margin-top:0;display:inline-flex;">
+            🎱 Tirer le prochain nom
+          </button>
+        </div>
 
-        <!-- Pool boules restantes -->
-        <p class="section-label">Postes disponibles</p>
-        <div id="pool-boules" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:12px;"></div>
+        <!-- Info rive -->
+        <div id="rive-tirage-info" style="display:none;" class="info-box blue"></div>
+
+        <!-- Instruction retourner carte -->
+        <div id="instruction-cartes" style="display:none;text-align:center;padding:10px;background:var(--orange-clair);border-radius:var(--radius-sm);margin-bottom:12px;font-size:13px;font-weight:600;color:#BA7517;">
+          👆 <span id="nom-doit-tirer"></span> — retournez une carte pour choisir votre poste
+        </div>
+
+        <!-- Pool postes restants -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <p class="section-label" style="margin:0;">Postes disponibles</p>
+          <span id="postes-restants-count" style="font-size:12px;font-weight:600;color:var(--bleu);"></span>
+        </div>
+        <div id="pool-boules" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:14px;"></div>
 
         <!-- Cartes à retourner -->
-        <p class="section-label" id="cartes-label" style="display:none;">Cartes à retourner</p>
+        <p class="section-label" id="cartes-label" style="display:none;">Choisissez un poste</p>
         <div id="cards-container" style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:14px;"></div>
 
-        <!-- Tableau résultats en direct -->
-        <p class="section-label">Résultats du tirage</p>
+        <!-- Tableau résultats -->
+        <p class="section-label">Tirages effectués</p>
         <div id="tirage-results" style="background:var(--gris-card);border:1px solid var(--gris-border);border-radius:var(--radius);overflow:hidden;margin-bottom:14px;">
-          <div style="background:#1e3a8a;padding:8px 12px;display:grid;grid-template-columns:1fr 50px 80px;gap:8px;">
+          <div style="background:#1e3a8a;padding:8px 12px;display:grid;grid-template-columns:1fr 60px 70px;gap:8px;">
             <span style="font-size:10px;color:rgba(255,255,255,0.7);font-weight:600;text-transform:uppercase;">Pêcheur</span>
             <span style="font-size:10px;color:rgba(255,255,255,0.7);font-weight:600;text-transform:uppercase;text-align:center;">Poste</span>
             <span style="font-size:10px;color:rgba(255,255,255,0.7);font-weight:600;text-transform:uppercase;text-align:right;">Rive</span>
@@ -1221,13 +1215,10 @@ body {
 
       <!-- ÉTAPE 3 : Fléchettes -->
       <div id="tirage-step3" style="display:none;">
-        <!-- Barre progression -->
-        <div style="background:var(--gris-card);border:1px solid var(--gris-border);border-radius:var(--radius-sm);height:6px;margin-bottom:12px;overflow:hidden;">
+        <div style="background:var(--gris-card);border:1px solid var(--gris-border);border-radius:var(--radius-sm);height:6px;margin-bottom:6px;overflow:hidden;">
           <div id="flechette-progress" style="height:100%;background:var(--vert-moyen);transition:width 0.3s;width:0%;"></div>
         </div>
         <div style="font-size:11px;color:var(--gris-text);text-align:right;margin-bottom:12px;" id="flechette-progress-label">0 / 0 équipes</div>
-
-        <!-- Équipe en cours -->
         <div class="card" style="border:1.5px solid var(--vert-moyen);margin-bottom:12px;">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
             <div id="fl-eq-num" style="width:32px;height:32px;border-radius:50%;background:var(--vert-moyen);color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">1</div>
@@ -1240,23 +1231,18 @@ body {
               <div style="font-size:10px;color:var(--gris-text);">pts</div>
             </div>
           </div>
-          <!-- Dots fléchettes -->
           <div id="fl-dots" style="display:flex;justify-content:center;gap:8px;margin-bottom:14px;"></div>
-          <!-- Cible SVG -->
           <div style="background:#1a1a2e;border-radius:10px;padding:12px;text-align:center;margin-bottom:10px;">
             <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:8px;">🎯 Appuyez sur la zone touchée</div>
             <svg id="dartboard-tirage" viewBox="0 0 450 450" width="240" height="240" style="cursor:pointer;display:block;margin:0 auto;"></svg>
-            <div id="fl-flash" style="display:none;margin-top:8px;background:var(--vert-clair);border-radius:20px;padding:5px 14px;font-size:14px;font-weight:600;color:var(--vert-moyen);display:inline-flex;align-items:center;gap:6px;"></div>
+            <div id="fl-flash" style="display:none;margin-top:8px;background:var(--vert-clair);border-radius:20px;padding:5px 14px;font-size:14px;font-weight:600;color:var(--vert-moyen);"></div>
           </div>
-          <!-- Sous-totaux volées -->
           <div style="display:flex;gap:8px;justify-content:center;margin-bottom:10px;" id="fl-volee-scores"></div>
-          <!-- Actions -->
           <div style="display:flex;gap:8px;">
             <button onclick="fl_miss()" style="flex:1;padding:10px;border:1px solid var(--gris-border);border-radius:var(--radius-sm);background:var(--gris-bg);font-size:12px;font-weight:600;color:var(--gris-text);font-family:var(--font-corps);cursor:pointer;">❌ Hors cible</button>
             <button onclick="fl_undo()" style="flex:1;padding:10px;border:1px solid var(--rouge);border-radius:var(--radius-sm);background:transparent;font-size:12px;font-weight:600;color:var(--rouge);font-family:var(--font-corps);cursor:pointer;">↩ Annuler</button>
           </div>
         </div>
-        <!-- Nav équipes -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
           <button onclick="fl_prev()" style="padding:12px;border:1px solid var(--gris-border);border-radius:var(--radius-sm);background:var(--gris-card);font-size:13px;font-weight:600;color:var(--gris-text);font-family:var(--font-corps);cursor:pointer;">← Précédent</button>
           <button onclick="fl_next()" id="btn-fl-next" style="padding:12px;border:none;border-radius:var(--radius-sm);background:var(--vert-moyen);font-size:13px;font-weight:600;color:#fff;font-family:var(--font-corps);cursor:pointer;">Suivant →</button>
@@ -1266,25 +1252,24 @@ body {
       <!-- ÉTAPE 4 : Tir de précision -->
       <div id="tirage-step4" style="display:none;">
         <div class="info-box green" style="margin-bottom:12px;">
-          🎣 Distance cible : <strong id="dist-cible-label">35 m</strong> · 2 lancers par équipe · meilleur retenu
+          🎣 Distance cible : <strong id="dist-cible-label">35 m</strong> · 2 lancers · meilleur retenu
         </div>
         <p class="section-label">Saisie des distances</p>
         <div id="precision-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;"></div>
         <p class="section-label">Classement provisoire</p>
         <div id="precision-classement" style="background:var(--gris-card);border:1px solid var(--gris-border);border-radius:var(--radius);overflow:hidden;margin-bottom:14px;"></div>
         <button class="btn-lancer" onclick="validerPrecision()" style="background:linear-gradient(135deg,#1e3a8a,var(--bleu));">
-          ✓ Valider le classement et choisir les postes
+          ✓ Valider et choisir les postes
         </button>
       </div>
 
-      <!-- ÉTAPE 5 : Assignation postes après classement fléchettes/précision -->
+      <!-- ÉTAPE 5 : Assignation postes (fléchettes/précision) -->
       <div id="tirage-step5" style="display:none;">
-        <div class="info-box orange" style="margin-bottom:12px;" id="sudden-death-banner" style="display:none;"></div>
         <p class="section-label">Ordre de choix des postes</p>
         <div id="assignation-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;"></div>
         <button class="btn-lancer" id="btn-valider-assignation" onclick="validerAssignation()" style="background:linear-gradient(135deg,#1e3a8a,var(--bleu));display:none;">
-          ✓ Lancer la pesée
-          <span class="lbadge" id="assignation-badge">0 postes assignés</span>
+          ✓ Valider et lancer la pesée
+          <span class="lbadge" id="assignation-badge">0 postes</span>
         </button>
       </div>
 
@@ -1964,116 +1949,71 @@ function ouvrirInscription() {
   const c = state.concours;
   if (!c) return;
   const cfg = FORMAT_CONFIG[c.type] || {};
-
-  // Header
   document.getElementById('insc-titre').textContent = cfg.label || 'Inscriptions';
   document.getElementById('insc-icon').textContent = cfg.icon || '📋';
-  document.getElementById('insc-sub').textContent =
-    c.mode === 'americaine' ? 'Mode Américaine — binômes' : 'Mode Individuel';
-
-  // Champs pêcheur 2 si américaine
   const ame = c.mode === 'americaine';
   document.getElementById('pecheur2-fields').style.display = ame ? 'block' : 'none';
   document.getElementById('label-nom1').textContent = ame ? 'NOM Pêcheur 1' : 'NOM';
   document.getElementById('label-prenom1').textContent = ame ? 'Prénom Pêcheur 1' : 'Prénom';
-  document.getElementById('btn-inscrire').textContent = ame ? '✓ Inscrire le binôme' : '✓ Inscrire';
-
-  // Info rive Carpodrome 2j
-  const riveInfo = document.getElementById('rive-insc-info');
-  riveInfo.style.display = (c.type === 'carpo' && c.jours === 2) ? 'flex' : 'none';
-
-  // Mise à jour liste postes dispo
-  majSelectPoste();
-
-  // Écoute Firebase en temps réel
-  if (inscriptionListener) inscriptionListener();
-  const refPecheurs = db.collection('concours').doc(c.id).collection('pecheurs');
-  inscriptionListener = refPecheurs.onSnapshot(snap => {
+  document.getElementById('insc-sub').textContent = ame ? 'Mode Américaine — saisie des binômes' : 'Mode Individuel — saisie des pêcheurs';
+  if (inscriptionListener) { inscriptionListener(); inscriptionListener = null; }
+  const refP = db.collection('concours').doc(c.id).collection('pecheurs');
+  inscriptionListener = refP.onSnapshot(snap => {
     const data = {};
     snap.forEach(doc => { data[doc.id] = doc.data(); });
     state.concours.pecheurs = data;
     majListeInscription();
-    majSelectPoste();
   });
-
   naviguer('inscription');
 }
 
-function majSelectPoste() {
+function getNbPostes() {
   const c = state.concours;
-  if (!c) return;
-  const cfg = FORMAT_CONFIG[c.type] || {};
-  const nbPostes = cfg.postes || 14;
-  const pecheurs = c.pecheurs || {};
-  const sel = document.getElementById('in-poste');
-  if (!sel) return;
+  if (!c) return 14;
+  return (FORMAT_CONFIG[c.type] || {}).postes || 14;
+}
 
-  // Postes déjà pris
-  const postesPris = Object.values(pecheurs).map(p => p.poste).filter(Boolean);
-
-  sel.innerHTML = '<option value="">— En attente de tirage —</option>';
-  for (let i = 1; i <= nbPostes; i++) {
-    if (!postesPris.includes(i)) {
-      // Pour Carpodrome 2j : indiquer la rive
-      let label = `Poste ${i}`;
-      if (c.type === 'carpo' && c.jours === 2) {
-        label += i <= 7 ? ' (Rive A)' : ' (Rive B)';
-      }
-      sel.innerHTML += `<option value="${i}">${label}</option>`;
-    }
-  }
+function getNbInscrits() {
+  return Object.keys(state.concours.pecheurs || {}).length;
 }
 
 function inscrirePecheur() {
   const c = state.concours;
   if (!c) return;
-
+  const nbMax = getNbPostes();
+  if (getNbInscrits() >= nbMax) {
+    showNotif('Maximum ' + nbMax + ' pêcheurs atteint', 'error');
+    return;
+  }
   const nom = document.getElementById('in-nom').value.trim().toUpperCase();
   const prenom = document.getElementById('in-prenom').value.trim();
-  const poste = document.getElementById('in-poste').value;
-  const ame = c.mode === 'americaine';
-
   if (!nom || !prenom) { showNotif('Nom et prénom requis', 'error'); return; }
-
-  const pecheur = {
-    nom, prenom,
-    poste: poste ? parseInt(poste) : null,
-    weights: [],
-    timestamp: Date.now()
-  };
-
+  const ame = c.mode === 'americaine';
+  const pecheur = { nom, prenom, poste: null, weights: [], timestamp: Date.now() };
   if (ame) {
     const nom2 = document.getElementById('in-nom2').value.trim().toUpperCase();
     const prenom2 = document.getElementById('in-prenom2').value.trim();
     if (!nom2 || !prenom2) { showNotif('Nom et prénom du 2ème pêcheur requis', 'error'); return; }
-    pecheur.nom2 = nom2;
-    pecheur.prenom2 = prenom2;
+    pecheur.nom2 = nom2; pecheur.prenom2 = prenom2;
   }
-
+  // Vérifier doublon
+  const existants = Object.values(c.pecheurs || {});
+  const doublon = existants.find(p => p.nom === nom && p.prenom.toLowerCase() === prenom.toLowerCase());
+  if (doublon) { showNotif(nom + ' ' + prenom + ' est déjà inscrit', 'error'); return; }
   showLoader(true);
   db.collection('concours').doc(c.id).collection('pecheurs').add(pecheur).then(ref => {
     lastAdded = { id: ref.id, ...pecheur };
     showLoader(false);
-    showNotif('✓ ' + nom + (ame ? ' & ' + (pecheur.nom2 || '') : '') + ' inscrit', 'success');
-
-    // Afficher bouton annuler + info
+    const label = ame && pecheur.nom2 ? nom + ' & ' + pecheur.nom2 : nom + ' ' + prenom;
+    showNotif('✓ ' + label + ' inscrit', 'success');
     document.getElementById('btn-annuler-insc').style.display = 'block';
     document.getElementById('last-insc-info').style.display = 'flex';
-    document.getElementById('last-insc-text').textContent =
-      `Dernière inscription : ${nom} ${prenom}${ame && pecheur.nom2 ? ' & ' + pecheur.nom2 + ' ' + pecheur.prenom2 : ''}${poste ? ' — Poste ' + poste : ' — En attente'}`;
-
-    // Vider le formulaire
+    document.getElementById('last-insc-text').textContent = 'Dernière inscription : ' + label;
     document.getElementById('in-nom').value = '';
     document.getElementById('in-prenom').value = '';
-    if (ame) {
-      document.getElementById('in-nom2').value = '';
-      document.getElementById('in-prenom2').value = '';
-    }
-    document.getElementById('in-poste').value = '';
-  }).catch(err => {
-    showLoader(false);
-    showNotif('Erreur : ' + err.message, 'error');
-  });
+    if (ame) { document.getElementById('in-nom2').value = ''; document.getElementById('in-prenom2').value = ''; }
+    document.getElementById('in-nom').focus();
+  }).catch(err => { showLoader(false); showNotif('Erreur : ' + err.message, 'error'); });
 }
 
 function annulerDerniereInscription() {
@@ -2085,196 +2025,126 @@ function annulerDerniereInscription() {
     lastAdded = null;
     document.getElementById('btn-annuler-insc').style.display = 'none';
     document.getElementById('last-insc-info').style.display = 'none';
-  }).catch(err => {
-    showLoader(false);
-    showNotif('Erreur : ' + err.message, 'error');
-  });
+  }).catch(err => { showLoader(false); showNotif('Erreur : ' + err.message, 'error'); });
 }
 
 function supprimerPecheur(id) {
   if (!state.concours) return;
   if (!confirm('Supprimer ce pêcheur ?')) return;
   showLoader(true);
-  db.collection('concours').doc(state.concours.id).collection('pecheurs').doc(id).delete().then(() => {
-    showLoader(false);
-    showNotif('Pêcheur supprimé', 'ok');
-  }).catch(err => {
-    showLoader(false);
-    showNotif('Erreur : ' + err.message, 'error');
-  });
+  db.collection('concours').doc(state.concours.id).collection('pecheurs').doc(id).delete()
+    .then(() => { showLoader(false); showNotif('Supprimé', 'ok'); })
+    .catch(err => { showLoader(false); showNotif('Erreur : ' + err.message, 'error'); });
 }
 
 function majListeInscription() {
   const c = state.concours;
   if (!c) return;
-  const pecheurs = c.pecheurs || {};
-  const cfg = FORMAT_CONFIG[c.type] || {};
-  const nbPostes = cfg.postes || 14;
+  const pecheurs = Object.entries(c.pecheurs || {}).sort(([,a],[,b]) => (a.timestamp||0)-(b.timestamp||0));
+  const nbMax = getNbPostes();
+  const nb = pecheurs.length;
   const ame = c.mode === 'americaine';
 
-  const assignes = Object.entries(pecheurs)
-    .filter(([, p]) => p.poste)
-    .sort(([, a], [, b]) => a.poste - b.poste);
-
-  const attente = Object.entries(pecheurs)
-    .filter(([, p]) => !p.poste)
-    .sort(([, a], [, b]) => (a.timestamp || 0) - (b.timestamp || 0));
-
   // Compteur
-  document.getElementById('insc-compteur').textContent = `${assignes.length} / ${nbPostes}`;
+  document.getElementById('insc-compteur').textContent = nb + ' / ' + nbMax;
+  document.getElementById('insc-compteur').style.color = nb >= nbMax ? 'var(--rouge)' : 'var(--vert-moyen)';
 
-  // Bouton lancer pesée
+  // Alerte cap
+  const capAlert = document.getElementById('cap-alert');
+  if (capAlert) capAlert.style.display = nb >= nbMax ? 'flex' : 'none';
+
+  // Bouton inscrire désactivé si cap atteint
+  const btnInsc = document.getElementById('btn-inscrire');
+  if (btnInsc) {
+    btnInsc.disabled = nb >= nbMax;
+    btnInsc.style.opacity = nb >= nbMax ? '0.4' : '1';
+  }
+
+  // Liste inscrits
+  const listeEl = document.getElementById('liste-inscrits');
+  if (!listeEl) return;
+  if (pecheurs.length === 0) {
+    listeEl.innerHTML = '<div class="info-box green" style="margin-bottom:8px;">ℹ️ Aucun pêcheur inscrit pour l'instant</div>';
+  } else {
+    listeEl.innerHTML = pecheurs.map(([id, p], i) => {
+      const nom2line = ame && p.nom2 ? '<div style="font-size:11px;color:var(--gris-text);margin-top:2px;">& ' + p.nom2 + ' ' + p.prenom2 + '</div>' : '';
+      const posteLabel = p.poste ? '<span style="font-size:11px;background:var(--vert-clair);color:var(--vert-moyen);border-radius:6px;padding:2px 8px;margin-left:6px;">Poste ' + p.poste + '</span>' : '';
+      return '<div class="card" style="padding:10px 14px;margin-bottom:6px;display:flex;align-items:center;gap:10px;">'
+        + '<div style="width:26px;height:26px;border-radius:50%;background:var(--vert-moyen);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">' + (i+1) + '</div>'
+        + '<div style="flex:1;min-width:0;">'
+        + '<div style="font-size:13px;font-weight:700;color:var(--texte);">' + p.nom + ' ' + p.prenom + posteLabel + '</div>'
+        + nom2line + '</div>'
+        + '<button onclick="supprimerPecheur('' + id + '')" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--rouge);opacity:0.6;padding:4px;flex-shrink:0;">🗑</button>'
+        + '</div>';
+    }).join('');
+  }
+
+  // Boutons valider/lancer
+  const btnValider = document.getElementById('btn-valider-inscriptions');
   const btnPesee = document.getElementById('btn-lancer-pesee');
-  if (assignes.length > 0) {
-    btnPesee.style.display = 'flex';
-    document.getElementById('pesee-badge').textContent = `${assignes.length} poste${assignes.length > 1 ? 's' : ''}`;
+  const badge = document.getElementById('badge-nb-inscrits');
+  if (nb > 0) {
+    if (btnValider) { btnValider.style.display = 'flex'; if (badge) badge.textContent = nb + ' pêcheur' + (nb>1?'s':''); }
+    if (btnPesee) btnPesee.style.display = 'flex';
   } else {
-    btnPesee.style.display = 'none';
-  }
-
-  // Liste assignés
-  const listeEl = document.getElementById('liste-assignes');
-  if (assignes.length === 0) {
-    listeEl.innerHTML = `<div class="info-box green">ℹ️ Aucun pêcheur assigné pour l'instant</div>`;
-  } else {
-    listeEl.innerHTML = assignes.map(([id, p]) => {
-      const rive = (c.type === 'carpo' && c.jours === 2)
-        ? `<span style="font-size:10px; background:${p.poste <= 7 ? 'var(--vert-clair)' : 'var(--bleu-clair)'}; color:${p.poste <= 7 ? 'var(--vert-moyen)' : 'var(--bleu)'}; border-radius:6px; padding:2px 7px; margin-left:5px;">${p.poste <= 7 ? 'Rive A' : 'Rive B'}</span>`
-        : '';
-      const nom2line = ame && p.nom2
-        ? `<div style="font-size:11px; color:var(--gris-text); margin-top:2px;">& ${p.nom2} ${p.prenom2}</div>`
-        : '';
-      return `
-        <div class="card" style="padding:12px 14px; margin-bottom:8px; display:flex; align-items:center; gap:10px; border-left:3px solid var(--vert-moyen);">
-          <div style="font-size:16px; font-weight:700; color:var(--bleu); min-width:32px;">${p.poste}${rive}</div>
-          <div style="flex:1;">
-            <div style="font-size:13px; font-weight:600; color:var(--texte);">${p.nom} ${p.prenom}</div>
-            ${nom2line}
-          </div>
-          <button onclick="supprimerPecheur('${id}')"
-            style="background:none; border:none; font-size:16px; cursor:pointer; color:var(--rouge); opacity:0.6; padding:4px;">🗑</button>
-        </div>`;
-    }).join('');
-  }
-
-  // Liste en attente
-  const attenteHeader = document.getElementById('attente-header');
-  const attenteEl = document.getElementById('liste-attente');
-  if (attente.length > 0) {
-    attenteHeader.style.display = 'block';
-    attenteEl.innerHTML = attente.map(([id, p]) => {
-      const nom2line = ame && p.nom2
-        ? `<div style="font-size:11px; color:var(--gris-text); margin-top:2px;">& ${p.nom2} ${p.prenom2}</div>`
-        : '';
-      return `
-        <div class="card" style="padding:12px 14px; margin-bottom:8px; display:flex; align-items:center; gap:10px; opacity:0.7; border-style:dashed;">
-          <div style="font-size:13px; color:var(--gris-text); min-width:32px;">—</div>
-          <div style="flex:1;">
-            <div style="font-size:13px; font-weight:600; color:var(--texte);">${p.nom} ${p.prenom}</div>
-            ${nom2line}
-            <div style="font-size:11px; color:var(--gris-text); margin-top:2px;">En attente de poste</div>
-          </div>
-          <button onclick="assigner('${id}')"
-            style="background:var(--vert-clair); border:1px solid var(--vert-moyen); border-radius:6px; padding:5px 10px; font-size:11px; font-weight:600; color:var(--vert-moyen); cursor:pointer; font-family:var(--font-corps);">
-            Assigner
-          </button>
-          <button onclick="supprimerPecheur('${id}')"
-            style="background:none; border:none; font-size:16px; cursor:pointer; color:var(--rouge); opacity:0.6; padding:4px;">🗑</button>
-        </div>`;
-    }).join('');
-  } else {
-    attenteHeader.style.display = 'none';
-    attenteEl.innerHTML = '';
+    if (btnValider) btnValider.style.display = 'none';
+    if (btnPesee) btnPesee.style.display = 'none';
   }
 }
 
-function assigner(id) {
+function validerInscriptions() {
   const c = state.concours;
   if (!c) return;
-  const pecheurs = c.pecheurs || {};
-  const p = pecheurs[id];
-  if (!p) return;
-
-  const cfg = FORMAT_CONFIG[c.type] || {};
-  const nbPostes = cfg.postes || 14;
-  const postesPris = Object.values(pecheurs).map(x => x.poste).filter(Boolean);
-
-  let options = '<option value="">— Choisir un poste —</option>';
-  for (let i = 1; i <= nbPostes; i++) {
-    if (!postesPris.includes(i)) {
-      let label = `Poste ${i}`;
-      if (c.type === 'carpo' && c.jours === 2) label += i <= 7 ? ' (Rive A)' : ' (Rive B)';
-      options += `<option value="${i}">${label}</option>`;
-    }
-  }
-
-  // Mini modal inline
-  const modal = document.createElement('div');
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px;';
-  modal.innerHTML = `
-    <div style="background:var(--gris-card);border-radius:var(--radius);padding:20px;width:100%;max-width:320px;box-shadow:var(--shadow-lg);">
-      <div style="font-size:15px;font-weight:700;color:var(--texte);margin-bottom:4px;">Assigner un poste</div>
-      <div style="font-size:13px;color:var(--gris-text);margin-bottom:14px;">${p.nom} ${p.prenom}${p.nom2 ? ' & ' + p.nom2 + ' ' + p.prenom2 : ''}</div>
-      <select id="modal-poste-sel" style="width:100%;padding:10px;border:1px solid var(--gris-border);border-radius:var(--radius-sm);font-size:13px;font-family:var(--font-corps);margin-bottom:14px;background:var(--gris-bg);">${options}</select>
-      <div style="display:flex;gap:8px;">
-        <button onclick="this.closest('[style*=fixed]').remove()" style="flex:1;padding:10px;border:1px solid var(--gris-border);border-radius:var(--radius-sm);background:var(--gris-bg);font-size:13px;font-weight:600;font-family:var(--font-corps);cursor:pointer;">Annuler</button>
-        <button onclick="confirmerAssignation('${id}',this)" style="flex:1;padding:10px;background:var(--vert-moyen);color:#fff;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:600;font-family:var(--font-corps);cursor:pointer;">Valider</button>
-      </div>
-    </div>`;
-  document.body.appendChild(modal);
-}
-
-function confirmerAssignation(id, btn) {
-  const modal = btn.closest('[style*=fixed]');
-  const poste = document.getElementById('modal-poste-sel').value;
-  if (!poste) { showNotif('Choisissez un poste', 'error'); return; }
-  if (!state.concours) return;
-  showLoader(true);
-  db.collection('concours').doc(state.concours.id).collection('pecheurs').doc(id).update({ poste: parseInt(poste) }).then(() => {
-    showLoader(false);
-    showNotif(`✓ Poste ${poste} assigné`, 'success');
-    if (modal) modal.remove();
-  }).catch(err => {
-    showLoader(false);
-    showNotif('Erreur : ' + err.message, 'error');
+  const nb = getNbInscrits();
+  if (nb === 0) { showNotif('Aucun pêcheur inscrit', 'error'); return; }
+  db.collection('concours').doc(c.id).update({ statut: 'tirage' }).then(() => {
+    showNotif(nb + ' pêcheurs validés ✓', 'success');
+    ouvrirTirage();
   });
 }
 
 function lancerPesee() {
-  if (!state.concours) return;
-  db.collection('concours').doc(state.concours.id).update({ statut: 'pesee' }).then(() => {
-    showNotif('Pesée lancée ! ✓', 'success');
+  const c = state.concours;
+  if (!c) return;
+  db.collection('concours').doc(c.id).update({ statut: 'pesee' }).then(() => {
+    showNotif('Pesée lancée ✓', 'success');
     ouvrirPesee();
   });
 }
 
-
-
 // ===== MODULE TIRAGE =====
 
 let modeTirage = 'boules';
-let tirageParticipants = [];
-let tiragePostes = [];
-let currentDrawn = null;
-let isDrawing = false;
-let flThrows = [];
-let flCurrentEq = 0;
+let tirageParticipants = [];   // liste ordonnée des participants à tirer
+let postesMelanges = [];       // postes pré-mélangés aléatoirement
+let tirageResultats = {};      // { pecId: numPoste }
+let tirageEnCours = false;
+let nomTire = null;            // participant dont c'est le tour
 let flScores = {};
+let flCurrentEq = 0;
 let precisionScores = {};
 let assignationClassement = [];
 let dartboardBuilt = false;
 
+// ===== OUVERTURE =====
 function ouvrirTirage() {
   const c = state.concours;
   if (!c) return;
   const cfg = FORMAT_CONFIG[c.type] || {};
+  const pecheurs = Object.values(c.pecheurs || {});
+  if (pecheurs.length === 0) { showNotif('Aucun pêcheur inscrit', 'error'); return; }
+
   document.getElementById('tirage-titre').textContent = cfg.label + ' · Tirage';
-  document.getElementById('tirage-sub').textContent = c.mode === 'americaine' ? 'Mode Américaine' : 'Mode Individuel';
+  document.getElementById('tirage-sub').textContent =
+    c.mode === 'americaine' ? 'Mode Américaine — ' + pecheurs.length + ' équipes'
+    : pecheurs.length + ' pêcheurs inscrits';
+
   // Masquer fléchettes/précision si pas Enduro
   const fl = document.getElementById('mode-flechettes');
   const pr = document.getElementById('mode-precision');
   if (fl) fl.style.display = c.type === 'enduro' ? 'flex' : 'none';
   if (pr) pr.style.display = c.type === 'enduro' ? 'flex' : 'none';
+
   selectModeTirage('boules');
   showTirageStep(1);
   naviguer('tirage');
@@ -2286,19 +2156,13 @@ function selectModeTirage(mode) {
     const card = document.getElementById('mode-' + m);
     const radio = document.getElementById('radio-' + m);
     if (!card || !radio) return;
-    if (m === mode) {
-      card.style.border = '1.5px solid var(--vert-moyen)';
-      radio.style.background = 'var(--vert-moyen)';
-      radio.style.borderColor = 'var(--vert-moyen)';
-      radio.innerHTML = '<div style="width:8px;height:8px;border-radius:50%;background:#fff;"></div>';
-    } else {
-      card.style.border = '1px solid var(--gris-border)';
-      radio.style.background = 'transparent';
-      radio.style.borderColor = 'var(--gris-border)';
-      radio.innerHTML = '';
-    }
+    const actif = m === mode;
+    card.style.border = actif ? '1.5px solid var(--vert-moyen)' : '1px solid var(--gris-border)';
+    radio.style.background = actif ? 'var(--vert-moyen)' : 'transparent';
+    radio.style.borderColor = actif ? 'var(--vert-moyen)' : 'var(--gris-border)';
+    radio.innerHTML = actif ? '<div style="width:8px;height:8px;border-radius:50%;background:#fff;"></div>' : '';
   });
-  const badges = { boules: 'Boules', flechettes: 'Fléchettes', precision: 'Précision' };
+  const badges = { boules:'Boules', flechettes:'Fléchettes', precision:'Précision' };
   const badge = document.getElementById('tirage-mode-badge');
   if (badge) badge.textContent = badges[mode] || mode;
   const distConf = document.getElementById('distance-config');
@@ -2313,83 +2177,113 @@ function showTirageStep(n) {
 }
 
 function demarrerTirage() {
-  const c = state.concours;
-  if (!c) return;
-  const pecheurs = c.pecheurs || {};
-  tirageParticipants = Object.entries(pecheurs)
-    .filter(([, p]) => p.poste || modeTirage !== 'boules')
-    .map(([id, p]) => ({ id, ...p }));
-
-  if (modeTirage === 'boules') demarrerTirageBoules();
+  if (modeTirage === 'boules') demarrerBoules();
   else if (modeTirage === 'flechettes') demarrerFlechettes();
   else if (modeTirage === 'precision') demarrerPrecision();
 }
 
 // ===== TIRAGE BOULES =====
-function demarrerTirageBoules() {
+// Flux : tirage d'un NOM → ce pêcheur retourne une carte → numéro de poste révélé → suivant
+
+function demarrerBoules() {
   const c = state.concours;
   if (!c) return;
   const cfg = FORMAT_CONFIG[c.type] || {};
   const nbPostes = cfg.postes || 14;
-  const pecheurs = Object.values(c.pecheurs || {});
+  const pecheurs = Object.entries(c.pecheurs || {});
 
-  // Construire liste participants sans poste
-  tirageParticipants = Object.entries(c.pecheurs || {})
-    .filter(([, p]) => !p.poste)
-    .map(([id, p]) => ({ id, ...p }));
+  if (pecheurs.length === 0) { showNotif('Aucun pêcheur inscrit', 'error'); return; }
 
-  if (tirageParticipants.length === 0) {
-    showNotif('Tous les pêcheurs ont déjà un poste', 'ok');
-    return;
-  }
+  // Liste des participants à tirer (mélangée pour l'ordre de tirage des noms)
+  tirageParticipants = pecheurs.map(([id, p]) => ({ id, ...p }));
+  tirageResultats = {};
+  nomTire = null;
+  tirageEnCours = false;
 
-  // Construire pool postes disponibles
-  const postesPris = pecheurs.filter(p => p.poste).map(p => p.poste);
-  tiragePostes = [];
-  for (let i = 1; i <= nbPostes; i++) {
-    if (!postesPris.includes(i)) {
-      let rive = '';
-      if (c.type === 'carpo' && c.jours === 2) rive = i <= 7 ? 'A' : 'B';
-      tiragePostes.push({ num: i, rive });
-    }
-  }
-  tiragePostes = shuffleArr(tiragePostes);
+  // Postes disponibles pré-mélangés — les cartes cachent ces numéros
+  const postesPris = pecheurs.map(([,p]) => p.poste).filter(Boolean);
+  const postesLibres = Array.from({length: nbPostes}, (_,i) => i+1)
+    .filter(n => !postesPris.includes(n));
+  postesMelanges = shuffleArr([...postesLibres]);
 
-  // Init machine boules
-  initLotoBalls();
+  // Afficher le résumé des participants
+  const tbody = document.getElementById('tirage-results-body');
+  if (tbody) tbody.innerHTML = '';
+
+  // Initialiser pool et cartes
   majPoolBoules();
-  majTirageResults();
+  initCartes();
 
-  // Info rive
+  // Infos rive Carpo 2j
   const riveInfo = document.getElementById('rive-tirage-info');
   if (c.type === 'carpo' && c.jours === 2) {
     riveInfo.style.display = 'flex';
-    riveInfo.textContent = 'ℹ️ Rive A : postes 1→7 · Rive B : postes 8→14 · J2 = inversion automatique';
+    riveInfo.textContent = 'ℹ️ Rive A : postes 1→7 · J2 = inversion automatique Rive B (8→14)';
   } else {
     riveInfo.style.display = 'none';
   }
 
-  // Cartes
-  initCartes();
+  // Reset affichage
+  const nameDisplay = document.getElementById('drawn-name');
+  if (nameDisplay) nameDisplay.innerHTML = 'Appuyez sur <strong>Tirer un nom</strong> pour commencer';
+  const btn = document.getElementById('btn-lancer-tirage');
+  if (btn) { btn.style.display = 'flex'; btn.textContent = '🎱 Tirer un nom'; btn.disabled = false; }
+  const instr = document.getElementById('instruction-cartes');
+  if (instr) instr.style.display = 'none';
+  const btnValider = document.getElementById('btn-valider-tirage');
+  if (btnValider) btnValider.style.display = 'none';
+
   showTirageStep(2);
 }
 
-function initLotoBalls() {
-  const machine = document.getElementById('loto-machine');
-  if (!machine) return;
-  machine.innerHTML = '';
-  const colors = ['#e74c3c','#3498db','#f1c40f','#9b59b6','#e67e22','#1abc9c','#2d7a4f','#185FA5'];
-  for (let i = 0; i < 15; i++) {
-    const ball = document.createElement('div');
-    ball.style.cssText = 'width:24px;height:24px;border-radius:50%;position:absolute;font-size:10px;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;';
-    ball.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-    ball.style.left = Math.random() * 105 + 5 + 'px';
-    ball.style.top = Math.random() * 105 + 5 + 'px';
-    ball.style.setProperty('--tx', (Math.random() * 80 - 40) + 'px');
-    ball.style.setProperty('--ty', (Math.random() * 80 - 40) + 'px');
-    ball.style.animationDelay = Math.random() + 's';
-    machine.appendChild(ball);
+function lancerTirageBoules() {
+  // Si un nom a déjà été tiré mais n'a pas encore retourné de carte → bloquer
+  if (nomTire !== null) {
+    showNotif('En attente que ' + nomTire.nom + ' retourne une carte', 'error');
+    return;
   }
+  // Plus personne à tirer
+  const restants = tirageParticipants.filter(p => !tirageResultats[p.id]);
+  if (restants.length === 0) {
+    showNotif('Tirage terminé !', 'success');
+    return;
+  }
+
+  tirageEnCours = true;
+  const btn = document.getElementById('btn-lancer-tirage');
+  const nameDisplay = document.getElementById('drawn-name');
+  const machine = document.getElementById('loto-machine');
+  const instr = document.getElementById('instruction-cartes');
+
+  if (btn) btn.disabled = true;
+  if (instr) instr.style.display = 'none';
+  nameDisplay.innerHTML = '<span style="color:var(--gris-text);">Tirage en cours...</span>';
+
+  // Animer les boules
+  if (machine) {
+    machine.querySelectorAll('div').forEach(b => {
+      b.style.animation = 'bounce 0.4s infinite alternate';
+    });
+  }
+
+  setTimeout(() => {
+    if (machine) machine.querySelectorAll('div').forEach(b => b.style.animation = '');
+
+    // Tirer un participant au hasard parmi ceux sans poste
+    const idx = Math.floor(Math.random() * restants.length);
+    nomTire = restants[idx];
+
+    const nom = nomTire.nom2
+      ? nomTire.nom + ' ' + nomTire.prenom + ' & ' + nomTire.nom2 + ' ' + nomTire.prenom2
+      : nomTire.nom + ' ' + nomTire.prenom;
+
+    nameDisplay.innerHTML =
+      "🎯 C'est au tour de :<br><span style='color:var(--vert-moyen);font-size:20px;font-weight:700;'>" + nom + '</span><br>'
+      + "<span style='font-size:13px;color:var(--gris-text);'>Retournez une carte pour choisir votre poste</span>";
+
+    if (instr) instr.style.display = 'block';
+    tirageEnCours = false;
+  }, 1800);
 }
 
 function initCartes() {
@@ -2397,87 +2291,81 @@ function initCartes() {
   const label = document.getElementById('cartes-label');
   if (!board) return;
   board.innerHTML = '';
-  if (tiragePostes.length === 0) return;
-  label.style.display = 'block';
-  tiragePostes.forEach((poste, index) => {
+  if (postesMelanges.length === 0) return;
+  if (label) label.style.display = 'block';
+
+  const c = state.concours;
+  postesMelanges.forEach((numPoste, index) => {
+    const rive = (c && c.type === 'carpo' && c.jours === 2)
+      ? (numPoste <= 7 ? '<br><span style="font-size:9px;opacity:0.7;">Rive A</span>' : '<br><span style="font-size:9px;opacity:0.7;">Rive B</span>')
+      : '';
     const card = document.createElement('div');
-    card.style.cssText = 'width:80px;height:110px;perspective:1000px;cursor:pointer;';
     card.id = 'card-' + index;
-    const riveLabel = poste.rive ? '<span style="font-size:10px;opacity:0.7;">Rive ' + poste.rive + '</span><br>' : '';
-    card.innerHTML = '<div id="card-inner-' + index + '" style="width:100%;height:100%;transition:transform 0.6s;transform-style:preserve-3d;position:relative;">'
-      + '<div style="position:absolute;width:100%;height:100%;backface-visibility:hidden;background:#fff;border:2px solid var(--gris-border);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:36px;color:#ecf0f1;font-weight:700;">?</div>'
-      + '<div style="position:absolute;width:100%;height:100%;backface-visibility:hidden;background:var(--vert-moyen);border:2px solid var(--vert-fonce);border-radius:8px;transform:rotateY(180deg);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font-weight:700;text-align:center;padding:4px;">'
-      + riveLabel
-      + '<span style="font-size:22px;">P.' + poste.num + '</span>'
+    card.style.cssText = 'width:75px;height:105px;perspective:1000px;cursor:pointer;flex-shrink:0;';
+    card.innerHTML =
+      '<div id="card-inner-' + index + '" style="width:100%;height:100%;transition:transform 0.6s;transform-style:preserve-3d;position:relative;">'
+      + '<div style="position:absolute;inset:0;backface-visibility:hidden;background:linear-gradient(135deg,var(--vert-fonce),var(--vert-moyen));border:2px solid var(--vert-fonce);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:32px;color:rgba(255,255,255,0.3);font-weight:700;">?</div>'
+      + '<div style="position:absolute;inset:0;backface-visibility:hidden;background:#fff;border:2px solid var(--vert-moyen);border-radius:10px;transform:rotateY(180deg);display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--vert-fonce);font-weight:700;text-align:center;">'
+      + '<span style="font-size:26px;line-height:1;">P.' + numPoste + '</span>' + rive
       + '</div></div>';
-    card.onclick = () => retournerCarte(card, index);
+    card.onclick = () => retournerCarte(index, numPoste);
     board.appendChild(card);
   });
 }
 
-function lancerTirageBoules() {
-  if (tirageParticipants.length === 0) {
-    showNotif('Tirage terminé !', 'success');
+function retournerCarte(index, numPoste) {
+  // Vérifier qu'un nom a été tiré
+  if (!nomTire) {
+    showNotif("Tirez d'abord un nom !", 'error');
     return;
   }
-  if (isDrawing) return;
+  const card = document.getElementById('card-' + index);
+  if (!card || card.dataset.flipped) return;
 
-  const btn = document.getElementById('btn-lancer-tirage');
-  const machine = document.getElementById('loto-machine');
-  const nameDisplay = document.getElementById('drawn-name');
-  const instr = document.getElementById('instruction-cartes');
-
-  btn.disabled = true;
-  isDrawing = true;
-  instr.style.display = 'none';
-
-  // Animation brassage
-  machine.querySelectorAll('div').forEach(b => {
-    b.style.animation = 'bounce 0.6s infinite alternate cubic-bezier(0.5,0.05,1,0.5)';
-  });
-  nameDisplay.textContent = 'Brassage en cours...';
-
-  setTimeout(() => {
-    machine.querySelectorAll('div').forEach(b => b.style.animation = '');
-    const idx = Math.floor(Math.random() * tirageParticipants.length);
-    currentDrawn = tirageParticipants.splice(idx, 1)[0];
-    const nom = currentDrawn.nom2
-      ? currentDrawn.nom + ' ' + currentDrawn.prenom + ' & ' + currentDrawn.nom2 + ' ' + currentDrawn.prenom2
-      : currentDrawn.nom + ' ' + currentDrawn.prenom;
-    nameDisplay.innerHTML = "C'est au tour de :<br><span style='color:var(--vert-moyen);font-size:20px;font-weight:700;'>" + nom + "</span>";
-    instr.style.display = 'block';
-    isDrawing = false;
-  }, 2000);
-}
-
-function retournerCarte(cardEl, index) {
-  if (isDrawing || !currentDrawn || cardEl.dataset.flipped) return;
-  const poste = tiragePostes[index];
-  if (!poste) return;
-
-  cardEl.dataset.flipped = '1';
+  // Retourner la carte
+  card.dataset.flipped = '1';
+  card.style.cursor = 'default';
   const inner = document.getElementById('card-inner-' + index);
   if (inner) inner.style.transform = 'rotateY(180deg)';
-  cardEl.style.cursor = 'default';
 
-  // Sauvegarder assignation
-  currentDrawn._posteAssigne = poste.num;
+  // Enregistrer le résultat
+  tirageResultats[nomTire.id] = numPoste;
 
-  // Afficher dans tableau
-  majTirageResults(currentDrawn, poste);
-  majPoolBoules(poste.num);
+  // Afficher dans le tableau
+  const nom = nomTire.nom2
+    ? nomTire.nom + ' ' + nomTire.prenom + ' & ' + nomTire.nom2 + ' ' + nomTire.prenom2
+    : nomTire.nom + ' ' + nomTire.prenom;
+  const c = state.concours;
+  const rive = (c && c.type === 'carpo' && c.jours === 2)
+    ? (numPoste <= 7 ? 'Rive A' : 'Rive B') : '';
+  const tbody = document.getElementById('tirage-results-body');
+  if (tbody) {
+    const row = '<div style="display:grid;grid-template-columns:1fr 50px 80px;gap:8px;padding:9px 12px;border-bottom:1px solid var(--gris-border);animation:fadeIn 0.3s ease;">'
+      + '<span style="font-size:13px;font-weight:600;color:var(--texte);">' + nom + '</span>'
+      + '<span style="font-size:15px;font-weight:700;color:var(--bleu);text-align:center;">' + numPoste + '</span>'
+      + '<span style="font-size:11px;color:var(--gris-text);text-align:right;">' + rive + '</span>'
+      + '</div>';
+    tbody.insertAdjacentHTML('afterbegin', row);
+  }
 
-  currentDrawn = null;
-  document.getElementById('instruction-cartes').style.display = 'none';
+  // Mettre à jour pool
+  majPoolBoules(numPoste);
 
+  // Reset pour prochain tirage
+  nomTire = null;
+  const instr = document.getElementById('instruction-cartes');
+  if (instr) instr.style.display = 'none';
+
+  const restants = tirageParticipants.filter(p => !tirageResultats[p.id]);
+  const nameDisplay = document.getElementById('drawn-name');
   const btn = document.getElementById('btn-lancer-tirage');
-  if (tirageParticipants.length > 0) {
-    btn.disabled = false;
-    btn.textContent = '🎱 Pêcheur suivant';
-    document.getElementById('drawn-name').textContent = 'En attente du prochain lancer...';
+
+  if (restants.length > 0) {
+    if (nameDisplay) nameDisplay.innerHTML = '<span style="color:var(--gris-text);">'+restants.length+' pêcheur'+(restants.length>1?'s':'')+' restant'+(restants.length>1?'s':'')+'</span>';
+    if (btn) { btn.disabled = false; btn.textContent = '🎱 Tirer le prochain nom'; }
   } else {
-    btn.style.display = 'none';
-    document.getElementById('drawn-name').innerHTML = "<span style='color:var(--vert-moyen);font-size:16px;'>✓ Tirage terminé !</span>";
+    if (nameDisplay) nameDisplay.innerHTML = "<span style='color:var(--vert-moyen);font-size:16px;font-weight:700;'>✓ Tirage terminé !</span>";
+    if (btn) btn.style.display = 'none';
     document.getElementById('btn-valider-tirage').style.display = 'flex';
   }
 }
@@ -2485,35 +2373,40 @@ function retournerCarte(cardEl, index) {
 function majPoolBoules(posteRetire) {
   const pool = document.getElementById('pool-boules');
   if (!pool) return;
-  pool.innerHTML = tiragePostes.map(p => {
-    const pris = posteRetire && p.num === posteRetire;
-    const bg = pris ? 'var(--gris-border)' : (p.rive === 'A' ? 'var(--vert-moyen)' : p.rive === 'B' ? 'var(--bleu)' : 'var(--vert-moyen)');
-    const deco = pris ? 'line-through;opacity:0.4' : '';
-    return '<div style="width:32px;height:32px;border-radius:50%;background:' + bg + ';display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;text-decoration:' + deco + ';">' + p.num + '</div>';
+  const c = state.concours;
+  pool.innerHTML = postesMelanges.map(p => {
+    const pris = Object.values(tirageResultats).includes(p);
+    const isRiveA = c && c.type === 'carpo' && c.jours === 2 && p <= 7;
+    const isRiveB = c && c.type === 'carpo' && c.jours === 2 && p > 7;
+    const bg = pris ? 'var(--gris-border)' : isRiveA ? 'var(--vert-moyen)' : isRiveB ? 'var(--bleu)' : 'var(--vert-moyen)';
+    const style = pris ? 'text-decoration:line-through;opacity:0.35;' : '';
+    return '<div style="width:32px;height:32px;border-radius:50%;background:' + bg + ';display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;' + style + '">' + p + '</div>';
   }).join('');
 }
 
-function majTirageResults(participant, poste) {
-  const tbody = document.getElementById('tirage-results-body');
-  if (!tbody || !participant || !poste) return;
-  const nom = participant.nom2
-    ? participant.nom + ' & ' + participant.nom2
-    : participant.nom + ' ' + participant.prenom;
-  const riveLabel = poste.rive ? 'Rive ' + poste.rive : '—';
-  const row = '<div style="display:grid;grid-template-columns:1fr 50px 80px;gap:8px;padding:9px 12px;border-bottom:1px solid var(--gris-border);animation:fadeIn 0.3s ease;">'
-    + '<span style="font-size:13px;font-weight:600;color:var(--texte);">' + nom + '</span>'
-    + '<span style="font-size:15px;font-weight:700;color:var(--bleu);text-align:center;">' + poste.num + '</span>'
-    + '<span style="font-size:11px;color:var(--gris-text);text-align:right;">' + riveLabel + '</span>'
-    + '</div>';
-  tbody.insertAdjacentHTML('afterbegin', row);
-}
-
 function validerTirageBoules() {
-  showNotif('Tirage sauvegardé ✓', 'success');
-  setTimeout(() => ouvrirPesee(), 800);
+  const c = state.concours;
+  if (!c) return;
+  const nb = Object.keys(tirageResultats).length;
+  if (nb === 0) { showNotif('Aucun tirage effectué', 'error'); return; }
+
+  showLoader(true);
+  const batch = db.batch();
+  Object.entries(tirageResultats).forEach(([pecId, poste]) => {
+    const ref = db.collection('concours').doc(c.id).collection('pecheurs').doc(pecId);
+    batch.update(ref, { poste: poste });
+  });
+  batch.commit().then(() => {
+    showLoader(false);
+    showNotif('✓ ' + nb + ' postes assignés', 'success');
+    setTimeout(() => ouvrirPesee(), 600);
+  }).catch(err => { showLoader(false); showNotif('Erreur : ' + err.message, 'error'); });
 }
 
 // ===== FLÉCHETTES =====
+// 2x3 fléchettes par pêcheur (binôme = 3 chacun)
+// L'équipe avec le PLUS de points choisit son poste en premier
+
 const DART_NUMBERS = [20,1,18,4,13,6,10,15,2,17,3,19,7,16,8,11,14,9,12,5];
 
 function buildDartboard(svgId) {
@@ -2522,7 +2415,6 @@ function buildDartboard(svgId) {
   svg.innerHTML = '';
   const cx = 225, cy = 225;
   const R = { outer:170, dblIn:158, triOut:105, triIn:95, oBull:32, bull:14 };
-  const cBlack = '#1a1a1a', cWhite = '#f5f5dc', cRed = '#e63946', cGreen = '#2d6a4f';
 
   const bg = document.createElementNS('http://www.w3.org/2000/svg','circle');
   bg.setAttribute('cx',cx); bg.setAttribute('cy',cy); bg.setAttribute('r',R.outer+28); bg.setAttribute('fill','#111');
@@ -2543,27 +2435,25 @@ function buildDartboard(svgId) {
 
   for(let i=0;i<20;i++){
     const num=DART_NUMBERS[i];
-    const sA=(i*18-99)*Math.PI/180, eA=((i+1)*18-99)*Math.PI/180;
-    const mA=(sA+eA)/2, even=i%2===0;
-    const sc=even?cBlack:cWhite, sp1=even?cRed:cGreen, sp2=even?cGreen:cRed;
-    svg.appendChild(seg(R.outer,R.dblIn,sA,eA,sp1,num*2,'Double '+num));
-    svg.appendChild(seg(R.dblIn,R.triOut,sA,eA,sc,num,'Simple '+num));
-    svg.appendChild(seg(R.triOut,R.triIn,sA,eA,sp2,num*3,'Triple '+num));
-    svg.appendChild(seg(R.triIn,R.oBull,sA,eA,sc,num,'Simple '+num));
-    const tR=R.outer+20;
+    const sA=(i*18-99)*Math.PI/180, eA=((i+1)*18-99)*Math.PI/180, mA=(sA+eA)/2;
+    const even=i%2===0;
+    svg.appendChild(seg(R.outer,R.dblIn,sA,eA,even?'#e63946':'#2d6a4f',num*2,'Double '+num));
+    svg.appendChild(seg(R.dblIn,R.triOut,sA,eA,even?'#1a1a1a':'#f5f5dc',num,'Simple '+num));
+    svg.appendChild(seg(R.triOut,R.triIn,sA,eA,even?'#2d6a4f':'#e63946',num*3,'Triple '+num));
+    svg.appendChild(seg(R.triIn,R.oBull,sA,eA,even?'#1a1a1a':'#f5f5dc',num,'Simple '+num));
     const t=document.createElementNS('http://www.w3.org/2000/svg','text');
-    t.setAttribute('x',cx+tR*Math.cos(mA)); t.setAttribute('y',cy+tR*Math.sin(mA));
+    t.setAttribute('x',cx+(R.outer+20)*Math.cos(mA)); t.setAttribute('y',cy+(R.outer+20)*Math.sin(mA));
     t.setAttribute('text-anchor','middle'); t.setAttribute('dominant-baseline','middle');
     t.setAttribute('fill','#e2e8f0'); t.setAttribute('font-size','14'); t.setAttribute('font-weight','900');
     t.textContent=num; svg.appendChild(t);
   }
   const ob=document.createElementNS('http://www.w3.org/2000/svg','circle');
   ob.setAttribute('cx',cx); ob.setAttribute('cy',cy); ob.setAttribute('r',R.oBull);
-  ob.setAttribute('fill',cGreen); ob.dataset.value=25; ob.dataset.label='Outer Bull (25)'; ob.style.cursor='pointer';
+  ob.setAttribute('fill','#2d6a4f'); ob.dataset.value=25; ob.dataset.label='Outer Bull'; ob.style.cursor='pointer';
   svg.appendChild(ob);
   const bull=document.createElementNS('http://www.w3.org/2000/svg','circle');
   bull.setAttribute('cx',cx); bull.setAttribute('cy',cy); bull.setAttribute('r',R.bull);
-  bull.setAttribute('fill',cRed); bull.dataset.value=50; bull.dataset.label='Bull (50)'; bull.style.cursor='pointer';
+  bull.setAttribute('fill','#e63946'); bull.dataset.value=50; bull.dataset.label='Bull (50)'; bull.style.cursor='pointer';
   svg.appendChild(bull);
 
   svg.querySelectorAll('path,circle[data-value]').forEach(el => {
@@ -2574,8 +2464,9 @@ function buildDartboard(svgId) {
 function demarrerFlechettes() {
   const c = state.concours;
   if (!c) return;
-  const pecheurs = Object.entries(c.pecheurs || {}).filter(([,p]) => p.poste);
-  flThrows = [];
+  const pecheurs = Object.entries(c.pecheurs || {});
+  if (pecheurs.length === 0) { showNotif('Aucune équipe inscrite', 'error'); return; }
+
   flCurrentEq = 0;
   flScores = {};
   pecheurs.forEach(([id]) => { flScores[id] = []; });
@@ -2587,54 +2478,42 @@ function demarrerFlechettes() {
 }
 
 function majFlEcran() {
-  const c = state.concours;
-  if (!c) return;
-  const pecheurs = tirageParticipants;
-  const nb = pecheurs.length;
-  const eq = pecheurs[flCurrentEq];
+  const eq = tirageParticipants[flCurrentEq];
   if (!eq) return;
+  const nb = tirageParticipants.length;
+  const throws = flScores[eq.id] || [];
+  const nom = eq.nom2 ? eq.nom+' '+eq.prenom+' & '+eq.nom2+' '+eq.prenom2 : eq.nom+' '+eq.prenom;
 
-  const progEl = document.getElementById('flechette-progress');
+  const prog = document.getElementById('flechette-progress');
   const progLabel = document.getElementById('flechette-progress-label');
-  if (progEl) progEl.style.width = ((flCurrentEq / nb) * 100) + '%';
+  if (prog) prog.style.width = (flCurrentEq/nb*100)+'%';
   if (progLabel) progLabel.textContent = flCurrentEq + ' / ' + nb + ' équipes';
 
-  const numEl = document.getElementById('fl-eq-num');
-  const nomEl = document.getElementById('fl-eq-nom');
-  const voleeEl = document.getElementById('fl-volee-num');
-  const fEl = document.getElementById('fl-f-num');
-  const totalEl = document.getElementById('fl-total');
-
-  const throws = flScores[eq.id] || [];
-  const nom = eq.nom2 ? eq.nom + ' & ' + eq.nom2 : eq.nom + ' ' + eq.prenom;
-  if (numEl) numEl.textContent = flCurrentEq + 1;
-  if (nomEl) nomEl.textContent = nom;
-  const curr = throws.length;
-  if (voleeEl) voleeEl.textContent = curr < 3 ? '1' : '2';
-  if (fEl) fEl.textContent = (curr % 3) + 1;
-  if (totalEl) totalEl.textContent = throws.reduce((s,t) => s + t.value, 0);
+  document.getElementById('fl-eq-num').textContent = flCurrentEq+1;
+  document.getElementById('fl-eq-nom').textContent = nom;
+  document.getElementById('fl-volee-num').textContent = throws.length < 3 ? '1' : '2';
+  document.getElementById('fl-f-num').textContent = (throws.length % 3)+1;
+  document.getElementById('fl-total').textContent = throws.reduce((s,t)=>s+t.value,0);
 
   // Dots
   const dotsEl = document.getElementById('fl-dots');
-  if (dotsEl) {
-    dotsEl.innerHTML = Array.from({length:6},(_,i) => {
-      const scored = throws[i];
-      const isCurr = i === curr;
-      const bg = scored ? 'var(--orange)' : isCurr ? 'var(--bleu)' : 'var(--gris-bg)';
-      const border = isCurr ? '2.5px solid var(--bleu)' : '2px solid var(--gris-border)';
-      const txt = scored ? scored.value : (i+1);
-      return '<div style="width:34px;height:34px;border-radius:50%;background:' + bg + ';border:' + border + ';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:' + (scored ? '#fff' : 'var(--gris-text)') + ';">' + txt + '</div>';
-    }).join('');
-  }
+  if (dotsEl) dotsEl.innerHTML = Array.from({length:6},(_,i) => {
+    const scored = throws[i];
+    const isCurr = i === throws.length;
+    const bg = scored ? 'var(--orange)' : isCurr ? 'var(--bleu)' : 'var(--gris-bg)';
+    const color = scored ? '#fff' : isCurr ? '#fff' : 'var(--gris-text)';
+    return '<div style="width:34px;height:34px;border-radius:50%;background:'+bg+';border:2px solid '+(isCurr?'var(--bleu)':'var(--gris-border)')+';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:'+color+';">'+(scored?scored.value:i+1)+'</div>';
+  }).join('');
 
   // Sous-totaux
   const vsEl = document.getElementById('fl-volee-scores');
   if (vsEl) {
     const v1 = throws.slice(0,3).reduce((s,t)=>s+t.value,0);
     const v2 = throws.slice(3,6).reduce((s,t)=>s+t.value,0);
-    vsEl.innerHTML = '<div style="background:var(--gris-bg);border-radius:8px;padding:6px 14px;text-align:center;"><div style="font-size:10px;color:var(--gris-text);">Volée 1</div><div style="font-size:16px;font-weight:700;">' + v1 + '</div></div>'
-      + '<div style="background:var(--gris-bg);border-radius:8px;padding:6px 14px;text-align:center;"><div style="font-size:10px;color:var(--gris-text);">Volée 2</div><div style="font-size:16px;font-weight:700;">' + v2 + '</div></div>'
-      + '<div style="background:var(--vert-clair);border-radius:8px;padding:6px 14px;text-align:center;"><div style="font-size:10px;color:var(--vert-moyen);">Total</div><div style="font-size:16px;font-weight:700;color:var(--vert-moyen);">' + (v1+v2) + '</div></div>';
+    vsEl.innerHTML =
+      '<div style="background:var(--gris-bg);border-radius:8px;padding:6px 14px;text-align:center;"><div style="font-size:10px;color:var(--gris-text);">Volée 1</div><div style="font-size:16px;font-weight:700;">'+v1+'</div></div>'
+      +'<div style="background:var(--gris-bg);border-radius:8px;padding:6px 14px;text-align:center;"><div style="font-size:10px;color:var(--gris-text);">Volée 2</div><div style="font-size:16px;font-weight:700;">'+v2+'</div></div>'
+      +'<div style="background:var(--vert-clair);border-radius:8px;padding:6px 14px;text-align:center;"><div style="font-size:10px;color:var(--vert-moyen);">Total</div><div style="font-size:16px;font-weight:700;color:var(--vert-moyen);">'+(v1+v2)+'</div></div>';
   }
 }
 
@@ -2642,61 +2521,47 @@ function fl_addThrow(val, label) {
   const eq = tirageParticipants[flCurrentEq];
   if (!eq) return;
   const throws = flScores[eq.id] || [];
-  if (throws.length >= 6) return;
-  throws.push({ value: val, label: label || val + ' pts' });
+  if (throws.length >= 6) { showNotif('6 fléchettes déjà saisies', 'error'); return; }
+  throws.push({value:val, label:label||val+' pts'});
   flScores[eq.id] = throws;
   const flash = document.getElementById('fl-flash');
-  if (flash) {
-    flash.style.display = 'inline-flex';
-    flash.textContent = '+' + val + ' — ' + (label || '');
-    setTimeout(() => flash.style.display = 'none', 1200);
-  }
+  if (flash) { flash.style.display='inline-flex'; flash.textContent='+'+val+' — '+(label||''); setTimeout(()=>flash.style.display='none',1000); }
   majFlEcran();
 }
-
-function fl_miss() { fl_addThrow(0, 'Hors cible'); }
+function fl_miss() { fl_addThrow(0,'Hors cible'); }
 function fl_undo() {
   const eq = tirageParticipants[flCurrentEq];
   if (!eq) return;
-  const throws = flScores[eq.id] || [];
-  throws.pop();
-  flScores[eq.id] = throws;
+  (flScores[eq.id]||[]).pop();
   majFlEcran();
 }
-function fl_prev() { if (flCurrentEq > 0) { flCurrentEq--; majFlEcran(); } }
+function fl_prev() { if (flCurrentEq>0){ flCurrentEq--; majFlEcran(); } }
 function fl_next() {
-  const eq = tirageParticipants[flCurrentEq];
-  if (!eq) return;
-  if (flCurrentEq < tirageParticipants.length - 1) {
-    flCurrentEq++;
-    majFlEcran();
-  } else {
-    // Tous saisis → classement
-    buildClassementFlechettes();
-  }
+  if (flCurrentEq < tirageParticipants.length-1) { flCurrentEq++; majFlEcran(); }
+  else buildClassementFlechettes();
 }
 
 function buildClassementFlechettes() {
+  // Plus de points = choisit en premier
   assignationClassement = tirageParticipants.map(p => ({
     ...p,
-    score: (flScores[p.id] || []).reduce((s,t) => s+t.value, 0),
-    suddenDeath: null
+    score: (flScores[p.id]||[]).reduce((s,t)=>s+t.value,0),
+    type: 'flechettes'
   })).sort((a,b) => b.score - a.score);
   afficherAssignation();
 }
 
 // ===== PRÉCISION =====
+// Plus petite distance = choisit en premier
 function demarrerPrecision() {
   const c = state.concours;
   if (!c) return;
-  const dist = parseFloat(document.getElementById('distance-cible').value) || 35;
+  const dist = parseFloat(document.getElementById('distance-cible').value)||35;
   const label = document.getElementById('dist-cible-label');
-  if (label) label.textContent = dist + ' m';
-  tirageParticipants = Object.entries(c.pecheurs || {})
-    .filter(([,p]) => p.poste)
-    .map(([id,p]) => ({id,...p}));
+  if (label) label.textContent = dist+' m';
+  tirageParticipants = Object.entries(c.pecheurs||{}).map(([id,p])=>({id,...p}));
   precisionScores = {};
-  tirageParticipants.forEach(p => { precisionScores[p.id] = [null, null]; });
+  tirageParticipants.forEach(p=>{ precisionScores[p.id]=[null,null]; });
   renderPrecisionList();
   showTirageStep(4);
 }
@@ -2705,108 +2570,106 @@ function renderPrecisionList() {
   const listEl = document.getElementById('precision-list');
   if (!listEl) return;
   listEl.innerHTML = tirageParticipants.map(p => {
-    const scores = precisionScores[p.id] || [null, null];
-    const best = scores.filter(s => s !== null).length > 0
-      ? Math.min(...scores.filter(s => s !== null))
-      : null;
-    const nom = p.nom2 ? p.nom + ' & ' + p.nom2 : p.nom + ' ' + p.prenom;
-    return '<div class="card" style="padding:12px;' + (best !== null ? 'border-left:3px solid var(--vert-moyen);' : '') + '">'
-      + '<div style="font-size:13px;font-weight:700;color:var(--texte);margin-bottom:8px;">' + nom + '</div>'
-      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'
-      + [0,1].map(i => {
-        const isBest = best !== null && scores[i] === best && scores.filter(s => s === best).length === 1;
-        return '<div>'
-          + '<label style="font-size:10px;font-weight:600;color:var(--gris-text);text-transform:uppercase;display:block;margin-bottom:4px;">Lancer ' + (i+1) + (isBest ? ' 🏆' : '') + '</label>'
-          + '<div style="display:flex;align-items:center;gap:4px;">'
-          + '<input type="number" step="0.01" min="0" placeholder="0.00" value="' + (scores[i] !== null ? scores[i] : '') + '" '
-          + 'oninput="updatePrecision(\'' + p.id + '\',' + i + ',this.value)" '
-          + 'style="flex:1;padding:8px;border:1px solid ' + (isBest ? 'var(--orange)' : 'var(--gris-border)') + ';border-radius:6px;font-size:16px;font-weight:700;text-align:center;background:' + (isBest ? 'var(--orange-clair)' : 'var(--gris-bg)') + ';font-family:var(--font-corps);">'
-          + '<span style="font-size:12px;color:var(--gris-text);">m</span></div></div>';
+    const scores = precisionScores[p.id]||[null,null];
+    const valides = scores.filter(s=>s!==null);
+    const best = valides.length>0 ? Math.min(...valides) : null;
+    const nom = p.nom2 ? p.nom+' & '+p.nom2 : p.nom+' '+p.prenom;
+    return '<div class="card" style="padding:12px;margin-bottom:6px;'+(best!==null?'border-left:3px solid var(--vert-moyen);':'')+'">'
+      +'<div style="font-size:13px;font-weight:700;margin-bottom:8px;">'+nom+'</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'
+      +[0,1].map(i=>{
+        const isBest = best!==null && scores[i]===best;
+        return '<div><label style="font-size:10px;font-weight:600;color:var(--gris-text);text-transform:uppercase;display:block;margin-bottom:4px;">Lancer '+(i+1)+(isBest?' 🏆':'')+' </label>'
+          +'<div style="display:flex;align-items:center;gap:4px;">'
+          +'<input type="number" step="0.01" min="0" placeholder="0.00" value="'+(scores[i]!==null?scores[i]:'')+'" '
+          +'oninput="updatePrecision(\''+p.id+'\','+i+',this.value)" '
+          +'style="flex:1;padding:8px;border:1px solid '+(isBest?'var(--orange)':'var(--gris-border)')+';border-radius:6px;font-size:16px;font-weight:700;text-align:center;background:'+(isBest?'var(--orange-clair)':'var(--gris-bg)')+';font-family:var(--font-corps);">'
+          +'<span style="font-size:12px;color:var(--gris-text);">m</span></div></div>';
       }).join('')
-      + '</div>'
-      + (best !== null ? '<div style="margin-top:8px;font-size:12px;font-weight:700;color:var(--vert-moyen);">Meilleur : ' + best.toFixed(2) + ' m</div>' : '')
-      + '</div>';
+      +'</div>'
+      +(best!==null?'<div style="margin-top:8px;font-size:12px;font-weight:700;color:var(--vert-moyen);">Meilleur : '+best.toFixed(2)+' m</div>':'')
+      +'</div>';
   }).join('');
   renderPrecisionClassement();
 }
 
 function updatePrecision(id, idx, val) {
   const v = parseFloat(val);
-  if (!precisionScores[id]) precisionScores[id] = [null, null];
-  precisionScores[id][idx] = isNaN(v) ? null : v;
+  if (!precisionScores[id]) precisionScores[id]=[null,null];
+  precisionScores[id][idx] = isNaN(v)?null:v;
   renderPrecisionList();
 }
 
 function renderPrecisionClassement() {
   const classEl = document.getElementById('precision-classement');
   if (!classEl) return;
-  const classes = tirageParticipants.map(p => {
-    const scores = precisionScores[p.id] || [];
-    const valides = scores.filter(s => s !== null);
-    const best = valides.length > 0 ? Math.min(...valides) : null;
-    const nom = p.nom2 ? p.nom + ' & ' + p.nom2 : p.nom + ' ' + p.prenom;
-    return { ...p, nom, best };
-  }).sort((a,b) => {
-    if (a.best === null && b.best === null) return 0;
-    if (a.best === null) return 1;
-    if (b.best === null) return -1;
-    return a.best - b.best;
+  const classes = tirageParticipants.map(p=>{
+    const scores = precisionScores[p.id]||[];
+    const valides = scores.filter(s=>s!==null);
+    const best = valides.length>0 ? Math.min(...valides) : null;
+    const nom = p.nom2 ? p.nom+' & '+p.nom2 : p.nom+' '+p.prenom;
+    return {...p, nom, best};
+  }).sort((a,b)=>{
+    if (a.best===null&&b.best===null) return 0;
+    if (a.best===null) return 1;
+    if (b.best===null) return -1;
+    return a.best-b.best;
   });
-  const rCoul = (r) => r===1?'#F5A623':r===2?'#B0BEC5':r===3?'#CD7F32':'var(--gris-bg)';
-  classEl.innerHTML = classes.map((p,i) => {
-    const r = i+1;
-    return '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--gris-border);">'
-      + '<div style="width:26px;height:26px;border-radius:50%;background:' + rCoul(r) + ';display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:' + (r<=3?'#fff':'var(--gris-text)') + ';">' + r + '</div>'
-      + '<div style="flex:1;font-size:13px;font-weight:600;">' + p.nom + '</div>'
-      + '<div style="font-size:14px;font-weight:700;color:' + (p.best !== null ? 'var(--vert-moyen)' : 'var(--gris-text)') + ';">' + (p.best !== null ? p.best.toFixed(2) + ' m' : '—') + '</div>'
-      + '</div>';
-  }).join('');
+  const rCoul = r => r===1?'#F5A623':r===2?'#B0BEC5':r===3?'#CD7F32':'var(--gris-bg)';
+  classEl.innerHTML = classes.map((p,i)=>
+    '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--gris-border);">'
+    +'<div style="width:26px;height:26px;border-radius:50%;background:'+rCoul(i+1)+';display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:'+(i<3?'#fff':'var(--gris-text)')+';">'+(i+1)+'</div>'
+    +'<div style="flex:1;font-size:13px;font-weight:600;">'+p.nom+'</div>'
+    +'<div style="font-size:14px;font-weight:700;color:'+(p.best!==null?'var(--vert-moyen)':'var(--gris-text)')+';">'+(p.best!==null?p.best.toFixed(2)+' m':'—')+'</div>'
+    +'</div>'
+  ).join('');
 }
 
 function validerPrecision() {
-  assignationClassement = tirageParticipants.map(p => {
-    const scores = precisionScores[p.id] || [];
-    const valides = scores.filter(s => s !== null);
-    const best = valides.length > 0 ? Math.min(...valides) : 9999;
-    return { ...p, score: best, type: 'precision' };
-  }).sort((a,b) => a.score - b.score);
+  assignationClassement = tirageParticipants.map(p=>{
+    const scores = precisionScores[p.id]||[];
+    const valides = scores.filter(s=>s!==null);
+    const best = valides.length>0 ? Math.min(...valides) : 9999;
+    return {...p, score:best, type:'precision'};
+  }).sort((a,b)=>a.score-b.score); // Plus proche = premier
   afficherAssignation();
 }
 
-// ===== ASSIGNATION POSTES =====
+// ===== ASSIGNATION POSTES (après fléchettes ou précision) =====
 function afficherAssignation() {
   const c = state.concours;
   if (!c) return;
-  const cfg = FORMAT_CONFIG[c.type] || {};
-  const nbPostes = cfg.postes || 14;
-  const postesPris = Object.values(c.pecheurs || {}).filter(p => p.poste).map(p => p.poste);
-  const postesLibres = Array.from({length:nbPostes},(_,i)=>i+1).filter(n => !postesPris.includes(n));
+  const cfg = FORMAT_CONFIG[c.type]||{};
+  const nbPostes = cfg.postes||14;
+  const postesPris = Object.values(c.pecheurs||{}).filter(p=>p.poste).map(p=>p.poste);
+  const postesLibres = Array.from({length:nbPostes},(_,i)=>i+1).filter(n=>!postesPris.includes(n));
+
+  // Mélanger les postes disponibles pour l'assignation
+  if (postesMelanges.length === 0) postesMelanges = shuffleArr([...postesLibres]);
 
   const listEl = document.getElementById('assignation-list');
   if (!listEl) return;
 
-  listEl.innerHTML = assignationClassement.map((p, i) => {
+  listEl.innerHTML = assignationClassement.map((p,i)=>{
     const r = i+1;
     const rCoul = r===1?'#F5A623':r===2?'#B0BEC5':r===3?'#CD7F32':'var(--gris-bg)';
-    const rTxt = r<=3?'#fff':'var(--gris-text)';
-    const nom = p.nom2 ? p.nom + ' & ' + p.nom2 : p.nom + ' ' + p.prenom;
-    const scoreLabel = p.type === 'precision'
-      ? (p.score < 9999 ? p.score.toFixed(2) + ' m' : '—')
-      : p.score + ' pts' + (p.suddenDeath !== null ? ' (SD:' + p.suddenDeath + ')' : '');
+    const nom = p.nom2 ? p.nom+' & '+p.nom2 : p.nom+' '+p.prenom;
+    const scoreLabel = p.type==='precision'
+      ? (p.score<9999 ? p.score.toFixed(2)+' m' : '—')
+      : p.score+' pts';
     const assigned = p._posteAssigne;
-    const options = postesLibres.filter(n => !Object.values(c.pecheurs || {}).find(x => x.poste === n && x._tirageTemp !== p.id))
-      .map(n => '<option value="' + n + '"' + (assigned===n?' selected':'') + '>Poste ' + n + (c.type==='carpo'&&c.jours===2?(n<=7?' (Rive A)':' (Rive B)'):'') + '</option>').join('');
-
-    return '<div class="card" style="padding:12px;display:flex;align-items:center;gap:10px;margin-bottom:0;' + (assigned ? 'border-left:3px solid var(--vert-moyen);' : '') + '">'
-      + '<div style="width:28px;height:28px;border-radius:50%;background:' + rCoul + ';display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:' + rTxt + ';flex-shrink:0;">' + r + '</div>'
-      + '<div style="flex:1;min-width:0;">'
-      + '<div style="font-size:13px;font-weight:700;color:var(--texte);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + nom + '</div>'
-      + '<div style="font-size:11px;color:var(--gris-text);">' + scoreLabel + '</div>'
-      + '</div>'
-      + '<select onchange="assignerPosteClassement(\'' + p.id + '\',this.value)" style="padding:6px 8px;border:1px solid var(--gris-border);border-radius:6px;font-size:12px;font-family:var(--font-corps);background:var(--gris-bg);">'
-      + '<option value="">—</option>' + options
-      + '</select>'
-      + '</div>';
+    const options = postesLibres
+      .map(n=>'<option value="'+n+'"'+(assigned===n?' selected':'')+'>Poste '+n+(c.type==='carpo'&&c.jours===2?(n<=7?' (Rive A)':' (Rive B)'):'')+' </option>').join('');
+    return '<div class="card" style="padding:12px;display:flex;align-items:center;gap:10px;margin-bottom:6px;'+(assigned?'border-left:3px solid var(--vert-moyen);':'')+'">'
+      +'<div style="width:28px;height:28px;border-radius:50%;background:'+rCoul+';display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:'+(r<=3?'#fff':'var(--gris-text)')+';">'+r+'</div>'
+      +'<div style="flex:1;min-width:0;">'
+      +'<div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+nom+'</div>'
+      +'<div style="font-size:11px;color:var(--gris-text);">'+scoreLabel+'</div>'
+      +'</div>'
+      +'<select onchange="assignerPosteClassement(\''+p.id+'\',this.value)" '
+      +'style="padding:6px 8px;border:1px solid var(--gris-border);border-radius:6px;font-size:12px;font-family:var(--font-corps);background:var(--gris-bg);">'
+      +'<option value="">—</option>'+options+'</select>'
+      +'</div>';
   }).join('');
 
   showTirageStep(5);
@@ -2814,50 +2677,41 @@ function afficherAssignation() {
 }
 
 function assignerPosteClassement(id, poste) {
-  const p = assignationClassement.find(x => x.id === id);
+  const p = assignationClassement.find(x=>x.id===id);
   if (p) p._posteAssigne = poste ? parseInt(poste) : null;
   majBtnValiderAssignation();
 }
 
 function majBtnValiderAssignation() {
-  const assignes = assignationClassement.filter(p => p._posteAssigne).length;
+  const assignes = assignationClassement.filter(p=>p._posteAssigne).length;
   const btn = document.getElementById('btn-valider-assignation');
   const badge = document.getElementById('assignation-badge');
-  if (btn) btn.style.display = assignes > 0 ? 'flex' : 'none';
-  if (badge) badge.textContent = assignes + ' poste' + (assignes > 1 ? 's' : '') + ' assigné' + (assignes > 1 ? 's' : '');
+  if (btn) btn.style.display = assignes>0 ? 'flex' : 'none';
+  if (badge) badge.textContent = assignes+' poste'+(assignes>1?'s':'')+' assigné'+(assignes>1?'s':'');
 }
 
 function validerAssignation() {
   const c = state.concours;
   if (!c) return;
-  const updates = {};
-  assignationClassement.forEach(p => {
-    if (p._posteAssigne) updates['concours/' + c.id + '/pecheurs/' + p.id + '/poste'] = p._posteAssigne;
-  });
-  if (Object.keys(updates).length === 0) return;
-  showLoader(true);
-  // Convertir les updates Firebase RTD en batch Firestore
   const batch = db.batch();
-  Object.entries(updates).forEach(([path, value]) => {
-    // path = 'concours/ID/pecheurs/PECID/poste'
-    const parts = path.split('/');
-    const concoursId = parts[1];
-    const pecId = parts[3];
-    const field = parts[4];
-    const ref = db.collection('concours').doc(concoursId).collection('pecheurs').doc(pecId);
-    batch.update(ref, { [field]: value });
+  assignationClassement.forEach(p => {
+    if (p._posteAssigne) {
+      const ref = db.collection('concours').doc(c.id).collection('pecheurs').doc(p.id);
+      batch.update(ref, { poste: p._posteAssigne });
+    }
   });
-  batch.commit().then(() => {
+  showLoader(true);
+  batch.commit().then(()=>{
     showLoader(false);
     showNotif('Postes assignés ✓', 'success');
-    setTimeout(() => ouvrirPesee(), 800);
-  }).catch(err => { showLoader(false); showNotif('Erreur : ' + err.message, 'error'); });
+    setTimeout(()=>ouvrirPesee(), 600);
+  }).catch(err=>{ showLoader(false); showNotif('Erreur : '+err.message, 'error'); });
 }
 
 // ===== UTILITAIRE =====
 function shuffleArr(arr) {
   let ci = arr.length, ri;
-  while (ci !== 0) { ri = Math.floor(Math.random() * ci); ci--; [arr[ci],arr[ri]] = [arr[ri],arr[ci]]; }
+  while(ci!==0){ ri=Math.floor(Math.random()*ci); ci--; [arr[ci],arr[ri]]=[arr[ri],arr[ci]]; }
   return arr;
 }
 
