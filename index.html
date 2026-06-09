@@ -2064,7 +2064,8 @@ function majListeInscription() {
   const listeEl = document.getElementById('liste-inscrits');
   if (!listeEl) return;
   if (pecheurs.length === 0) {
-    listeEl.innerHTML = '<div class="info-box green" style="margin-bottom:8px;">ℹ️ Aucun pêcheur inscrit pour l'instant</div>';
+    // CORRECTION 1 : Échappement de l'apostrophe dans "l'instant"
+    listeEl.innerHTML = '<div class="info-box green" style="margin-bottom:8px;">ℹ️ Aucun pêcheur inscrit pour l\'instant</div>';
   } else {
     listeEl.innerHTML = pecheurs.map(([id, p], i) => {
       const nom2line = ame && p.nom2 ? '<div style="font-size:11px;color:var(--gris-text);margin-top:2px;">& ' + p.nom2 + ' ' + p.prenom2 + '</div>' : '';
@@ -2074,7 +2075,8 @@ function majListeInscription() {
         + '<div style="flex:1;min-width:0;">'
         + '<div style="font-size:13px;font-weight:700;color:var(--texte);">' + p.nom + ' ' + p.prenom + posteLabel + '</div>'
         + nom2line + '</div>'
-        + '<button onclick="supprimerPecheur('' + id + '')" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--rouge);opacity:0.6;padding:4px;flex-shrink:0;">🗑</button>'
+        // CORRECTION 2 : Échappement correct pour la fonction supprimerPecheur
+        + '<button onclick="supprimerPecheur(\'' + id + '\')" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--rouge);opacity:0.6;padding:4px;flex-shrink:0;">🗑</button>'
         + '</div>';
     }).join('');
   }
